@@ -15,15 +15,10 @@ target/
 .kotlin
 
 ### IntelliJ IDEA ###
-.idea/*.xml
-.idea/libraries/
+.idea
 *.iws
 *.iml
 *.ipr
-.idea/workspace.xml
-.idea/tasks.xml
-.idea/inspectionProfiles/
-.idea/dictionaries/
 *.swp
 *.swo
 *~
