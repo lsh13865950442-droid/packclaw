@@ -1,0 +1,32 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: packclaw
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/packclaw}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    type: com.alibaba.druid.pool.DruidDataSource
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+  mapper-locations: classpath*:mapper/*.xml
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: com.packclaw
+
+packclaw:
+  dashscope:
+    apiKey: ${DASHSCOPE_API_KEY}
+    model: ${DASHSCOPE_MODEL:qwen3-max}

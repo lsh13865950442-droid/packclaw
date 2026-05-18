@@ -1,0 +1,150 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ===== 亮色主题变量 ===== */
+:root {
+  --bg-app: #fafafa;
+  --bg-sidebar: #ffffff;
+  --bg-main: #ffffff;
+  --bg-topbar: #ffffff;
+  --bg-chat: #ffffff;
+  --bg-input: #ffffff;
+  --bg-input-box: #f8f9fa;
+  --bg-card: #f8f9fa;
+  --bg-user-bubble: linear-gradient(135deg, #f5f5f5, #fafafa);
+  --bg-task-hover: #f0f0f0;
+  --bg-task-active: #e8e8e8;
+  --bg-btn-hover: #f0f0f0;
+  --border-color: #f0f0f0;
+  --border-input: #e8e8e8;
+  --border-card: #f0f0f0;
+  --border-sidebar: #f0f0f0;
+  --text-primary: #333;
+  --text-secondary: #666;
+  --text-muted: #aaa;
+  --text-nav: #555;
+  --text-user-bubble: #333;
+  --text-assistant: #333;
+  --scrollbar-thumb: #d0d0d0;
+  --scrollbar-hover: #b0b0b0;
+}
+
+/* ===== 暗色主题变量 ===== */
+html.dark {
+  --bg-app: #1a1a1a;
+  --bg-sidebar: #1e1e1e;
+  --bg-main: #141414;
+  --bg-topbar: #1a1a1a;
+  --bg-chat: #141414;
+  --bg-input: #1a1a1a;
+  --bg-input-box: #242424;
+  --bg-card: #1e1e1e;
+  --bg-user-bubble: #2a2a2a;
+  --bg-task-hover: #2a2a2a;
+  --bg-task-active: #333333;
+  --bg-btn-hover: #2a2a2a;
+  --border-color: #2e2e2e;
+  --border-input: #333333;
+  --border-card: #2e2e2e;
+  --border-sidebar: #2e2e2e;
+  --text-primary: #e0e0e0;
+  --text-secondary: #999;
+  --text-muted: #555;
+  --text-nav: #bbb;
+  --text-user-bubble: #e0e0e0;
+  --text-assistant: #e0e0e0;
+  --scrollbar-thumb: #3a3a3a;
+  --scrollbar-hover: #4a4a4a;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-app);
+  color: var(--text-primary);
+}
+
+#app {
+  width: 100%;
+  height: 100vh;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-hover);
+}
+
+/* ===== 暗色模式元素覆盖 ===== */
+html.dark .app-container { background: #111111 !important; }
+html.dark .sidebar { background: #1e1e1e !important; border-color: #2a2a2a !important; box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important; }
+html.dark .main-content { background: #141414 !important; border-color: #2a2a2a !important; box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important; }
+html.dark .nav-item { color: #bbb !important; }
+html.dark .nav-item:hover { background: #2a2a2a !important; }
+html.dark .nav-icon { color: #888 !important; }
+html.dark .new-task-btn { background: #2a3d2a !important; color: #7cc47c !important; }
+html.dark .task-group-label { color: #555 !important; }
+html.dark .task-item:hover { background: #2a2a2a !important; }
+html.dark .task-item.active { background: #333 !important; }
+html.dark .task-title { color: #ccc !important; }
+html.dark .user-section { background: #1e1e1e !important; }
+html.dark .user-name { color: #ddd !important; }
+html.dark .user-plan { color: #555 !important; }
+html.dark .settings-icon { color: #555 !important; }
+html.dark .chat-area { background: #141414 !important; }
+html.dark .chat-minimap { background: #141414 !important; }
+html.dark .minimap-dot { background: #333 !important; }
+html.dark .minimap-dot.active { background: #4CAF50 !important; }
+html.dark .top-bar { background: #1a1a1a !important; border-radius: 16px 16px 0 0 !important; }
+html.dark .page-title { color: #ddd !important; }
+html.dark .user-bubble { background: #2a2a2a !important; color: #ddd !important; }
+html.dark .assistant-bubble { color: #ddd !important; }
+html.dark .thinking-header { color: #777 !important; }
+html.dark .thinking-content { border-left-color: #444 !important; }
+html.dark .thinking-text { color: #888 !important; }
+html.dark .chat-input-area { background: #1a1a1a !important; border-top-color: #2e2e2e !important; }
+html.dark .input-section { background: #1a1a1a !important; }
+html.dark .input-box { background: #242424 !important; border-color: #333 !important; }
+html.dark .input-box:focus-within { background: #2a2a2a !important; border-color: #444 !important; box-shadow: none !important; }
+html.dark .chat-input { color: #ddd !important; background: transparent !important; }
+html.dark .chat-input::placeholder { color: #555 !important; }
+html.dark .message-input .el-textarea__inner { color: #ddd !important; background: transparent !important; caret-color: #ddd !important; }
+html.dark .input-toolbar { border-top-color: #2e2e2e !important; }
+html.dark .model-name { color: #555 !important; }
+html.dark .action-icon-btn { color: #555 !important; }
+html.dark .action-icon-btn:hover { background: #2a2a2a !important; color: #aaa !important; }
+html.dark .welcome-page { background: #141414 !important; }
+html.dark .welcome-title { color: #eee !important; }
+html.dark .welcome-subtitle { color: #666 !important; }
+html.dark .feature-card { background: #1e1e1e !important; border-color: #2e2e2e !important; }
+html.dark .feature-card:hover { background: #242424 !important; }
+html.dark .feature-title { color: #ccc !important; }
+html.dark .feature-desc { color: #666 !important; }
+html.dark .suggestion-chip { background: #1e1e1e !important; border-color: #333 !important; color: #aaa !important; }
+html.dark .suggestion-chip:hover { background: #252525 !important; }
+html.dark .model-name { background: #333 !important; color: #888 !important; }
+html.dark .send-button { background: #555 !important; }
+html.dark .send-button:hover { background: #666 !important; }
+html.dark .send-button:disabled { background: #333 !important; }
+html.dark .logo-text { color: #e0e0e0 !important; }
+html.dark .task-item.active { background: #2a2a2a !important; }
+html.dark .task-title.active, html.dark .task-item.active .task-title { color: #fff !important; }

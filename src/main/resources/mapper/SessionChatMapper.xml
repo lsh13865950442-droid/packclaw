@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.packclaw.mapper.SessionChatMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.packclaw.model.po.SessionChat">
+        <result column="session_id" property="sessionId" jdbcType="VARCHAR"/>
+        <result column="state_key" property="stateKey" jdbcType="VARCHAR"/>
+        <result column="item_index" property="itemIndex" jdbcType="INTEGER"/>
+        <result column="state_data" property="stateData" jdbcType="VARCHAR"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 插入或更新单个状态 -->
+    <insert id="upsertState" parameterType="com.packclaw.model.po.SessionChat">
+        INSERT INTO session_chat
+            (session_id, state_key, item_index, state_data)
+        VALUES
+            (#{sessionId}, #{stateKey}, #{itemIndex}, #{stateData})
+        ON CONFLICT (session_id, state_key, item_index)
+        DO UPDATE SET state_data = EXCLUDED.state_data
+    </insert>
+
+    <!-- 批量插入状态项 -->
+    <insert id="batchInsertStates">
+        INSERT INTO session_chat
+            (session_id, state_key, item_index, state_data)
+        VALUES
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.sessionId}, #{entity.stateKey}, #{entity.itemIndex}, #{entity.stateData})
+        </foreach>
+    </insert>
+
+    <!-- 根据会话ID和状态键查询单个状态 -->
+    <select id="selectByKey" resultMap="BaseResultMap">
+        SELECT session_id, state_key, item_index, state_data, created_at, updated_at
+        FROM session_chat
+        WHERE session_id = #{sessionId}
+          AND state_key = #{stateKey}
+          AND item_index = #{itemIndex}
+    </select>
+
+    <!-- 根据会话ID和状态键查询列表状态 -->
+    <select id="selectListByKey" resultMap="BaseResultMap">
+        SELECT session_id, state_key, item_index, state_data, created_at, updated_at
+        FROM session_chat
+        WHERE session_id = #{sessionId}
+          AND state_key = #{stateKey}
+        ORDER BY item_index
+    </select>
+
+    <!-- 获取列表状态的最大索引 -->
+    <select id="selectMaxIndex" resultType="java.lang.Integer">
+        SELECT MAX(item_index) as max_index
+        FROM session_chat
+        WHERE session_id = #{sessionId}
+          AND state_key = #{stateKey}
+    </select>
+
+    <!-- 检查会话是否存在 -->
+    <select id="existsSession" resultType="java.lang.Integer">
+        SELECT 1
+        FROM session_chat
+        WHERE session_id = #{sessionId}
+        LIMIT 1
+    </select>
+
+    <!-- 删除会话的所有状态 -->
+    <delete id="deleteBySessionId">
+        DELETE FROM session_chat
+        WHERE session_id = #{sessionId}
+    </delete>
+
+    <!-- 删除指定键的所有状态项 -->
+    <delete id="deleteByStateKey">
+        DELETE FROM session_chat
+        WHERE session_id = #{sessionId}
+          AND state_key = #{stateKey}
+    </delete>
+
+    <!-- 查询所有不同的会话ID -->
+    <select id="selectAllSessionIds" resultType="java.lang.String">
+        SELECT DISTINCT session_id
+        FROM session_chat
+        ORDER BY session_id
+    </select>
+
+    <!-- 清除所有会话数据 -->
+    <delete id="clearAllSessions">
+        DELETE FROM session_chat
+    </delete>
+</mapper>
