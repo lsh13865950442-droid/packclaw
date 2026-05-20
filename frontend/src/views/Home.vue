@@ -53,16 +53,10 @@
         </div>
       </div>
 
-      <!-- 用户信息 -->
-      <div class="user-section">
-        <div class="user-avatar">
-          <el-avatar :size="36" class="avatar-img">U</el-avatar>
-        </div>
-        <div class="user-details">
-          <div class="user-name">shihong liu</div>
-          <div class="user-plan">Pro Plan</div>
-        </div>
-        <el-icon class="settings-icon"><Setting /></el-icon>
+      <!-- 版本信息 -->
+      <div class="version-section">
+        <span class="version-text">v0.0.1</span>
+        <el-icon class="settings-icon" title="设置"><Setting /></el-icon>
       </div>
     </aside>
 
@@ -201,11 +195,67 @@
                 </transition>
               </div>
 
+              <!-- 工具调用区域 -->
+              <div v-if="msg.toolCalls && msg.toolCalls.length > 0" class="tool-calls-block">
+                <div class="tool-calls-header" @click="msg.toolCallsCollapsed = !msg.toolCallsCollapsed" style="cursor:pointer">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.07 4.93A10 10 0 1 0 4.93 19.07"/>
+                    <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2"/>
+                  </svg>
+                  <span>查看 {{ msg.toolCalls.length }} 个步骤</span>
+                  <svg class="tool-calls-chevron" :class="{ expanded: !msg.toolCallsCollapsed }" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <transition name="thinking-expand">
+                  <div v-show="!msg.toolCallsCollapsed" class="tool-calls-list">
+                    <div v-for="tool in msg.toolCalls" :key="tool.id" class="tool-call-item">
+                      <!-- 工具调用标题 -->
+                      <div class="tool-call-header" @click="toggleToolCall(index, tool.id)">
+                        <svg class="tool-status-icon" :class="{ spinning: tool.status === 'running' }" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                          <template v-if="tool.status === 'done'">
+                            <circle cx="12" cy="12" r="10" stroke="#4CAF50" stroke-width="2"/>
+                            <path d="M8 12l3 3 5-5" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          </template>
+                          <template v-else>
+                            <circle cx="12" cy="12" r="10" stroke="#999" stroke-width="2"/>
+                            <path d="M12 2A10 10 0 0 1 22 12" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                          </template>
+                        </svg>
+                        <span class="tool-call-name">调用工具 <code>{{ tool.name }}</code></span>
+                        <svg class="tool-call-chevron" :class="{ expanded: !tool.collapsed }" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                          <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </div>
+                      <!-- 展开详情 -->
+                      <transition name="thinking-expand">
+                        <div v-show="!tool.collapsed" class="tool-call-detail">
+                          <!-- 输入参数 -->
+                          <div v-if="tool.input && Object.keys(tool.input).length" class="tool-detail-section">
+                            <div class="tool-detail-label">Input</div>
+                            <pre class="tool-detail-content">{{ formatToolInput(tool.input) }}</pre>
+                          </div>
+                          <!-- 执行结果 -->
+                          <div v-if="tool.result" class="tool-detail-section">
+                            <div class="tool-detail-label">Response</div>
+                            <pre class="tool-detail-content">{{ tool.result }}</pre>
+                          </div>
+                          <div v-else-if="tool.status === 'running'" class="tool-running-hint">
+                            <span>执行中...</span>
+                          </div>
+                        </div>
+                      </transition>
+                    </div>
+                  </div>
+                </transition>
+              </div>
+
               <!-- 正式回答内容 -->
               <div v-if="msg.content" v-html="renderMarkdown(msg.content)"></div>
 
               <!-- 加载指示器 -->
-              <div v-if="msg.loading && !msg.thinking && !msg.content" class="typing-indicator">
+              <div v-if="msg.loading && !msg.thinking && !msg.content && (!msg.toolCalls || msg.toolCalls.length === 0)" class="typing-indicator">
                 <span></span><span></span><span></span>
               </div>
 
@@ -307,7 +357,7 @@
 <script setup>
 import { ref, onMounted, nextTick, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useChatStore } from '../stores/chat'
+import { useChatStore, _extractResultText } from '../stores/chat'
 import { api } from '../api'
 import { marked } from 'marked'
 import { 
@@ -320,6 +370,7 @@ import { ElMessage } from 'element-plus'
 const chatStore = useChatStore()
 // 用 storeToRefs 保持响应性
 const { messages, isStreaming, currentChatId, currentSessionId } = storeToRefs(chatStore)
+const { upsertToolCall, toggleToolCall, applyReasoningChunk, applyFinalReasoning, applyToolResult, resetStreamState } = chatStore
 const inputMessage = ref('')
 const sessionList = ref([])
 const currentTitle = ref('')
@@ -400,28 +451,57 @@ const selectSession = async (session) => {
     chatStore.setCurrentSession(session.chatId, session.chatId)
     currentTitle.value = session.title
     isChatting.value = true
-    
-    // 加载历史消息
+
     chatStore.clearMessages()
-    if (res.data.messages) {
-      res.data.messages.forEach(msg => {
-        if (msg.role === 'USER') {
-          // 用户消息：content 可能是字符串或数组
-          const text = extractMessageText(msg)
-          chatStore.addMessage({ role: 'user', content: text })
-        } else {
-          // AI 消息
-          const text = extractMessageText(msg)
-          const thinking = extractMessageThinking(msg)
-          chatStore.addMessage({
-            role: 'assistant',
-            content: text,
-            thinking: thinking || '',
-            thinkingDone: !!thinking,
-            thinkingCollapsed: !!thinking  // 历史消息默认折叠
-          })
+    if (!res.data.messages) return
+
+    for (const msg of res.data.messages) {
+      const role = (msg.role || '').toUpperCase()
+      const contentBlocks = Array.isArray(msg.content) ? msg.content : []
+
+      if (role === 'USER') {
+        const text = extractMessageText(msg)
+        if (text) chatStore.addMessage({ role: 'user', content: text })
+
+      } else if (role === 'ASSISTANT') {
+        const text = extractMessageText(msg)
+        const thinking = extractMessageThinking(msg)
+        // 提取 tool_use blocks 重建工具调用列表
+        const toolCalls = contentBlocks
+          .filter(b => b.type === 'tool_use' && b.id)
+          .map(b => ({
+            id: b.id,
+            name: b.name,
+            input: b.input,
+            collapsed: true,  // 历史默认折叠
+            status: 'done'
+          }))
+        chatStore.addMessage({
+          role: 'assistant',
+          content: text || '',
+          thinking: thinking || '',
+          thinkingDone: true,
+          thinkingCollapsed: true,
+          toolCalls: toolCalls.length ? toolCalls : undefined,
+          toolCallsCollapsed: toolCalls.length ? true : undefined
+        })
+
+      } else if (role === 'TOOL') {
+        // 将工具结果回填到上一条 ASSISTANT 消息的 toolCalls 中
+        const msgs = chatStore.messages
+        const lastAssistant = [...msgs].reverse().find(m => m.role === 'assistant')
+        if (lastAssistant && lastAssistant.toolCalls) {
+          for (const block of contentBlocks) {
+            if (block.type === 'tool_result') {
+              const tool = lastAssistant.toolCalls.find(t => t.id === (block.id || block.toolUseId))
+              if (tool) {
+                tool.result = _extractResultText(block)
+                tool.status = 'done'
+              }
+            }
+          }
         }
-      })
+      }
     }
   } catch (error) {
     ElMessage.error('加载会话失败')
@@ -447,13 +527,15 @@ const sendMessage = async () => {
     content: userMessage
   })
 
-  // 添加助手消息（加载中）
+  // 添加加载占位（第一个 REASONING 到来前会被复用）
   chatStore.addMessage({
     role: 'assistant',
     content: '',
     loading: true
   })
 
+  // 重置流式状态（确保上一次的 messageId 不会干扰本次）
+  resetStreamState()
   chatStore.setStreaming(true)
 
   try {
@@ -461,6 +543,17 @@ const sendMessage = async () => {
     if (!currentSessionId.value) {
       const sessionRes = await api.createSession({ message: userMessage })
       chatStore.setCurrentSession(sessionRes.data)
+      // 立即设置临时标题并加入左侧列表
+      currentTitle.value = '新对话'
+      sessionList.value.unshift({ chatId: sessionRes.data, title: '新对话' })
+      // 立即异步生成真实标题（不需要等 chat 完成）
+      api.generateTitle(sessionRes.data)
+        .then(res => {
+          currentTitle.value = res.data
+          const item = sessionList.value.find(s => s.chatId === sessionRes.data)
+          if (item) item.title = res.data
+        })
+        .catch(e => console.error('生成标题失败:', e))
     }
 
     // 流式请求
@@ -478,26 +571,12 @@ const sendMessage = async () => {
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let buffer = ''
-    let fullContent = ''
 
     while (true) {
       const { done, value } = await reader.read()
       if (done) {
-        // 流结束，确保最后一条消息被更新
-        if (fullContent) {
-          chatStore.updateLastMessage(fullContent)
-        }
         chatStore.setStreaming(false)
         scrollToBottom()
-        // 生成标题（不需要等待）
-        if (!currentTitle.value) {
-          api.generateTitle(currentSessionId.value)
-            .then(res => {
-              currentTitle.value = res.data
-              loadSessionList()
-            })
-            .catch(e => console.error('生成标题失败:', e))
-        }
         break
       }
 
@@ -514,49 +593,36 @@ const sendMessage = async () => {
         if (trimmedLine.startsWith('data:')) {
           data = trimmedLine.slice(5).trim()
         }
-        if (!data) continue
-
-        if (data === '[START]') continue
+        if (!data || data === '[START]') continue
 
         if (data === '[DONE]') {
-          chatStore.updateLastMessage(fullContent)
           chatStore.setStreaming(false)
           scrollToBottom()
-          // 生成标题（不需要等待）
-          if (!currentTitle.value) {
-            api.generateTitle(currentSessionId.value)
-              .then(res => {
-                currentTitle.value = res.data
-                loadSessionList()
-              })
-              .catch(e => console.error('生成标题失败:', e))
-          }
           continue
         }
 
         try {
           const parsed = JSON.parse(data)
-          const item = parsed.content && parsed.content[0]
-          if (!item) continue
+          const eventType = parsed.type          // REASONING | TOOL_RESULT
+          const isLast = parsed.isLast === true   // 注意：字段名是 isLast
+          const messageId = parsed.messageId
+          const msg = parsed.message
+          if (!msg) continue
 
-          if (item.type === 'thinking' && item.thinking) {
-            // 深度思考内容增量
-            chatStore.updateLastMessageThinking(item.thinking)
-            scrollToBottom()
-          } else if (item.type === 'text' && item.text) {
-            // 切换到正式回答时，先标记思考完毕
-            if (!fullContent) {
-              chatStore.finishLastMessageThinking()
+          const contentBlocks = Array.isArray(msg.content) ? msg.content : []
+
+          if (eventType === 'REASONING') {
+            if (!isLast) {
+              // 增量 chunk：单个 block，真正的增量片段
+              const block = contentBlocks[0]
+              if (block) applyReasoningChunk(messageId, block)
+            } else {
+              // 最终事件：用完整数据覆盖，确保状态正确
+              applyFinalReasoning(messageId, contentBlocks)
             }
-            fullContent += item.text
-            chatStore.updateLastMessage(fullContent)
             scrollToBottom()
-          } else if (parsed.textContent) {
-            if (!fullContent) {
-              chatStore.finishLastMessageThinking()
-            }
-            fullContent += parsed.textContent
-            chatStore.updateLastMessage(fullContent)
+          } else if (eventType === 'TOOL_RESULT' && isLast) {
+            applyToolResult(contentBlocks)
             scrollToBottom()
           }
         } catch (e) {
@@ -687,17 +753,31 @@ const hideTooltip = () => {
   tooltipVisible.value = false
 }
 
+// 格式化工具输入参数（不显示外层 {} 包裹，过滤 @type 等 Java 内部字段）
+const formatToolInput = (input) => {
+  if (!input) return ''
+  if (typeof input === 'string') return input
+  return Object.entries(input)
+    .filter(([k]) => !k.startsWith('@'))
+    .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : JSON.stringify(v, null, 2)}`)
+    .join('\n')
+}
+
 // 渲染 Markdown
 const renderMarkdown = (content) => {
   if (!content) return ''
   return marked(content)
 }
 
-// 滚动到底部
+// 滚动到底部（仅在用户已处于底部附近时才滚动，允许向上查看历史）
 const scrollToBottom = async () => {
   await nextTick()
-  if (messagesContainer.value) {
-    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+  const container = messagesContainer.value
+  if (!container) return
+  // 判断是否已接近底部（容差 100px）
+  const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
+  if (isNearBottom) {
+    container.scrollTop = container.scrollHeight
   }
 }
 
@@ -909,47 +989,31 @@ onMounted(() => {
   z-index: 9999;
 }
 
-/* 用户信息 */
-.user-section {
+/* 版本信息 */
+.version-section {
   padding: 12px 16px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
   background: white;
 }
 
-.avatar-img {
-  background: linear-gradient(135deg, #FF6B6B, #FF8E53) !important;
-  color: white;
-  font-weight: 600;
-}
-
-.user-details {
-  flex: 1;
-}
-
-.user-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #333;
-}
-
-.user-plan {
+.version-text {
   font-size: 11px;
-  color: #999;
-  margin-top: 2px;
+  color: #bbb;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
 .settings-icon {
-  color: #999;
+  color: #bbb;
   cursor: pointer;
-  font-size: 18px;
-  transition: all 0.2s;
+  font-size: 16px;
+  transition: color 0.2s;
 }
 
 .settings-icon:hover {
-  color: #333;
-  transform: rotate(30deg);
+  color: #666;
 }
 
 /* ===== 主内容区域 ===== */
@@ -1323,7 +1387,7 @@ onMounted(() => {
   color: #d73a49;
 }
 
-.assistant-bubble :deep(pre) {
+.assistant-bubble :deep(pre):not(.tool-detail-content) {
   background: #1e1e1e;
   padding: 16px;
   border-radius: 12px;
@@ -1331,11 +1395,20 @@ onMounted(() => {
   margin: 16px 0;
 }
 
-.assistant-bubble :deep(pre code) {
+.assistant-bubble :deep(pre):not(.tool-detail-content) code {
   background: transparent;
   padding: 0;
   color: #e6e6e6;
   font-size: 13px;
+}
+
+/* 工具调用内容框强制覆盖 pre 的深色样式 */
+.assistant-bubble :deep(.tool-detail-content) {
+  background: #f7f7f7 !important;
+  color: #555 !important;
+  padding: 10px 12px !important;
+  border-radius: 8px !important;
+  border: 1px solid #eeeeee !important;
 }
 
 /* 打字指示器 */
@@ -1536,6 +1609,146 @@ onMounted(() => {
 
 .stop-button:hover {
   background: #88d8b0;
+}
+
+/* ===== 工具调用样式 ===== */
+.tool-calls-block {
+  margin-bottom: 12px;
+}
+
+.tool-calls-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: #888;
+  font-size: 13px;
+  padding: 2px 0;
+}
+
+.tool-calls-header svg {
+  flex-shrink: 0;
+  color: #aaa;
+}
+
+.tool-calls-chevron {
+  color: #bbb;
+  transform: rotate(-90deg);
+  transition: transform 0.22s ease;
+  flex-shrink: 0;
+}
+
+.tool-calls-chevron.expanded {
+  transform: rotate(0deg);
+}
+
+.tool-calls-list {
+  margin-top: 6px;
+  padding-left: 14px;
+  border-left: 2px solid #e8e8e8;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tool-call-item {
+  border-radius: 8px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.tool-call-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #555;
+  transition: background 0.15s;
+  user-select: none;
+  border-radius: 8px;
+}
+
+.tool-call-header:hover {
+  background: #f5f5f5;
+}
+
+.tool-status-icon {
+  flex-shrink: 0;
+}
+
+.tool-status-icon.spinning {
+  animation: thinkingSpin 1.2s linear infinite;
+}
+
+.tool-call-name {
+  font-size: 13px;
+  color: #555;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tool-call-name code {
+  background: transparent;
+  color: #444;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.9em;
+  padding: 0;
+  font-weight: 500;
+}
+
+.tool-call-chevron {
+  color: #ccc;
+  transform: rotate(-90deg);
+  transition: transform 0.22s ease;
+  flex-shrink: 0;
+}
+
+.tool-call-chevron.expanded {
+  transform: rotate(0deg);
+}
+
+.tool-call-detail {
+  padding: 4px 8px 8px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tool-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tool-detail-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.tool-detail-content {
+  font-size: 12.5px;
+  color: #555 !important;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: #f7f7f7 !important;
+  border: 1px solid #eeeeee;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 0;
+}
+
+.tool-running-hint {
+  font-size: 12px;
+  color: #aaa;
+  padding: 4px 0;
 }
 
 /* ===== 深度思考样式 ===== */

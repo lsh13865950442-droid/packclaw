@@ -93,7 +93,7 @@ public class ChatController {
         generator
                 .doOnNext(event -> {
                     // 所有事件都发送
-                    sink.tryEmitNext(ServerSentEvent.builder(JSON.toJSONString(event.getMessage())).build());
+                    sink.tryEmitNext(ServerSentEvent.builder(JSON.toJSONString(event)).build());
                 })
                 .doOnError(e -> log.error("Unexpected error in stream processing: {}", e.getMessage(), e))
                 .doOnComplete(() -> {
