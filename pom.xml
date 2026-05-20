@@ -24,7 +24,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- Dependency versions -->
-        <agentscope.version>1.0.10</agentscope.version>
+        <agentscope.version>1.1.0-RC1</agentscope.version>
         <mybatis-spring-boot.version>3.0.4</mybatis-spring-boot.version>
         <druid.version>1.2.23</druid.version>
         <postgresql.version>42.7.3</postgresql.version>
@@ -35,6 +35,7 @@
         <httpclient5.version>5.4.1</httpclient5.version>
         <jsonschema-generator.version>4.36.0</jsonschema-generator.version>
         <pagehelper.version>6.1.0</pagehelper.version>
+        <okio.version>3.17.0</okio.version>
     </properties>
 
     <dependencies>
@@ -63,10 +64,10 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- AgentScope Spring Boot Starter -->
+        <!-- AgentScope Harness -->
         <dependency>
             <groupId>io.agentscope</groupId>
-            <artifactId>agentscope-spring-boot-starter</artifactId>
+            <artifactId>agentscope-harness</artifactId>
             <version>${agentscope.version}</version>
         </dependency>
 
@@ -158,6 +159,13 @@
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>4.12.0</version>
+        </dependency>
+
+        <!-- Okio (explicit version to fix NoSuchMethodError with OkHttp 4.12) -->
+        <dependency>
+            <groupId>com.squareup.okio</groupId>
+            <artifactId>okio</artifactId>
+            <version>${okio.version}</version>
         </dependency>
     </dependencies>
 

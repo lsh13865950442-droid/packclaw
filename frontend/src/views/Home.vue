@@ -49,7 +49,7 @@
           :class="{ active: currentChatId === session.chatId }"
           @click="selectSession(session)"
         >
-          <div class="task-title">{{ session.title || '新对话' }}</div>
+          <div class="task-title">{{ truncateTitle(session.title) }}</div>
         </div>
       </div>
 
@@ -65,6 +65,11 @@
         <el-icon class="settings-icon"><Setting /></el-icon>
       </div>
     </aside>
+
+    <!-- 自定义 tooltip -->
+    <div class="custom-tooltip" v-show="tooltipVisible" :style="tooltipStyle">
+      {{ tooltipText }}
+    </div>
 
     <!-- 中间主内容区 -->
     <main class="main-content">
@@ -229,6 +234,8 @@
               v-if="msg.role === 'user'"
               class="minimap-dot"
               :class="{ active: activeMessageIndex === index || activeMessageIndex === index + 1 }"
+              @mouseenter="showMinimapTooltip($event, msg)"
+              @mouseleave="hideTooltip"
               @click="scrollToMessage(index)"
             ></div>
           </template>
@@ -270,13 +277,23 @@
               <div class="action-right">
                 <span class="model-name">{{ currentModel }}</span>
                 <el-button 
+                  v-if="!isStreaming"
                   type="primary" 
                   class="send-button"
-                  :disabled="!inputMessage.trim() || isStreaming"
+                  :disabled="!inputMessage.trim()"
                   @click="sendMessage"
-                  :loading="isStreaming"
                 >
                   <el-icon><Top /></el-icon>
+                </el-button>
+                <el-button 
+                  v-else
+                  type="danger" 
+                  class="stop-button"
+                  @click="stopGeneration"
+                >
+                  <svg viewBox="0 0 24 24" fill="white" width="14" height="14">
+                    <rect x="6" y="6" width="12" height="12" rx="2"/>
+                  </svg>
                 </el-button>
               </div>
             </div>
@@ -311,6 +328,11 @@ const folderInput = ref(null)
 const activeNav = ref('new-task')
 const isChatting = ref(false)
 const showSidebar = ref(true)
+
+// Tooltip 状态
+const tooltipVisible = ref(false)
+const tooltipText = ref('')
+const tooltipStyle = ref({})
 
 // 小导航条
 const messageRefs = ref({})
@@ -384,16 +406,13 @@ const selectSession = async (session) => {
     if (res.data.messages) {
       res.data.messages.forEach(msg => {
         if (msg.role === 'USER') {
-          // 用户消息
-          const text = msg.textContent || (msg.content && msg.content[0] && msg.content[0].text) || ''
+          // 用户消息：content 可能是字符串或数组
+          const text = extractMessageText(msg)
           chatStore.addMessage({ role: 'user', content: text })
         } else {
-          // AI 消息：从 content 数组里分别提取 thinking 和 text
-          const contentArr = msg.content || []
-          const thinkingItem = contentArr.find(c => c.type === 'thinking')
-          const textItem = contentArr.find(c => c.type === 'text')
-          const thinking = thinkingItem ? thinkingItem.thinking : ''
-          const text = msg.textContent || (textItem ? textItem.text : '') || ''
+          // AI 消息
+          const text = extractMessageText(msg)
+          const thinking = extractMessageThinking(msg)
           chatStore.addMessage({
             role: 'assistant',
             content: text,
@@ -407,6 +426,11 @@ const selectSession = async (session) => {
   } catch (error) {
     ElMessage.error('加载会话失败')
   }
+}
+
+// 停止生成（临时禁用，不调后端接口）
+const stopGeneration = () => {
+  // 当前架构中断后无法保存对话内容，暂时关闭停止功能
 }
 
 // 发送消息
@@ -458,62 +482,85 @@ const sendMessage = async () => {
 
     while (true) {
       const { done, value } = await reader.read()
-      if (done) break
+      if (done) {
+        // 流结束，确保最后一条消息被更新
+        if (fullContent) {
+          chatStore.updateLastMessage(fullContent)
+        }
+        chatStore.setStreaming(false)
+        scrollToBottom()
+        // 生成标题（不需要等待）
+        if (!currentTitle.value) {
+          api.generateTitle(currentSessionId.value)
+            .then(res => {
+              currentTitle.value = res.data
+              loadSessionList()
+            })
+            .catch(e => console.error('生成标题失败:', e))
+        }
+        break
+      }
 
       buffer += decoder.decode(value, { stream: true })
       const lines = buffer.split('\n')
       buffer = lines.pop() || ''
 
       for (const line of lines) {
-        if (line.startsWith('data:')) {
-          const data = line.slice(5).trim()
+        const trimmedLine = line.trim()
+        if (!trimmedLine) continue
 
-          if (data === '[START]') continue
+        // 处理 SSE data: 前缀
+        let data = trimmedLine
+        if (trimmedLine.startsWith('data:')) {
+          data = trimmedLine.slice(5).trim()
+        }
+        if (!data) continue
 
-          if (data === '[DONE]') {
-            chatStore.updateLastMessage(fullContent)
-            chatStore.setStreaming(false)
+        if (data === '[START]') continue
+
+        if (data === '[DONE]') {
+          chatStore.updateLastMessage(fullContent)
+          chatStore.setStreaming(false)
+          scrollToBottom()
+          // 生成标题（不需要等待）
+          if (!currentTitle.value) {
+            api.generateTitle(currentSessionId.value)
+              .then(res => {
+                currentTitle.value = res.data
+                loadSessionList()
+              })
+              .catch(e => console.error('生成标题失败:', e))
+          }
+          continue
+        }
+
+        try {
+          const parsed = JSON.parse(data)
+          const item = parsed.content && parsed.content[0]
+          if (!item) continue
+
+          if (item.type === 'thinking' && item.thinking) {
+            // 深度思考内容增量
+            chatStore.updateLastMessageThinking(item.thinking)
             scrollToBottom()
-            // 生成标题（不需要等待）
-            if (!currentTitle.value) {
-              api.generateTitle(currentSessionId.value)
-                .then(res => {
-                  currentTitle.value = res.data
-                  loadSessionList()
-                })
-                .catch(e => console.error('生成标题失败:', e))
+          } else if (item.type === 'text' && item.text) {
+            // 切换到正式回答时，先标记思考完毕
+            if (!fullContent) {
+              chatStore.finishLastMessageThinking()
             }
-            continue
-          }
-
-          try {
-            const parsed = JSON.parse(data)
-            const item = parsed.content && parsed.content[0]
-            if (!item) continue
-
-            if (item.type === 'thinking' && item.thinking) {
-              // 深度思考内容增量
-              chatStore.updateLastMessageThinking(item.thinking)
-              scrollToBottom()
-            } else if (item.type === 'text' && item.text) {
-              // 切换到正式回答时，先标记思考完毕
-              if (!fullContent) {
-                chatStore.finishLastMessageThinking()
-              }
-              fullContent += item.text
-              chatStore.updateLastMessage(fullContent)
-              scrollToBottom()
-            } else if (parsed.textContent) {
-              if (!fullContent) {
-                chatStore.finishLastMessageThinking()
-              }
-              fullContent += parsed.textContent
-              chatStore.updateLastMessage(fullContent)
-              scrollToBottom()
+            fullContent += item.text
+            chatStore.updateLastMessage(fullContent)
+            scrollToBottom()
+          } else if (parsed.textContent) {
+            if (!fullContent) {
+              chatStore.finishLastMessageThinking()
             }
-          } catch (e) {
-            // 忽略解析错误
+            fullContent += parsed.textContent
+            chatStore.updateLastMessage(fullContent)
+            scrollToBottom()
           }
+        } catch (e) {
+          // 忽略解析错误
         }
       }
     }
@@ -595,6 +642,49 @@ const handleFolderSelected = (event) => {
     ElMessage.success(`已选择工作目录: ${folderPath}`)
     // TODO: 将工作目录信息发送到后端或存储在状态中
   }
+}
+
+// 提取消息文本（兼容字符串和数组格式）
+const extractMessageText = (msg) => {
+  if (msg.textContent) return msg.textContent
+  if (typeof msg.content === 'string') return msg.content
+  if (Array.isArray(msg.content)) {
+    const textItem = msg.content.find(c => c.type === 'text')
+    return textItem ? textItem.text : ''
+  }
+  return ''
+}
+
+// 提取深度思考内容
+const extractMessageThinking = (msg) => {
+  if (Array.isArray(msg.content)) {
+    const thinkingItem = msg.content.find(c => c.type === 'thinking')
+    return thinkingItem ? thinkingItem.thinking : ''
+  }
+  return ''
+}
+
+// 截断标题到 15 个字
+const truncateTitle = (title) => {
+  if (!title) return '新对话'
+  return title.length > 15 ? title.slice(0, 15) + '...' : title
+}
+
+// 显示小导航条 tooltip（CSS 控制宽度截断）
+const showMinimapTooltip = (event, msg) => {
+  tooltipText.value = msg.content || ''
+  tooltipVisible.value = true
+  const rect = event.currentTarget.getBoundingClientRect()
+  tooltipStyle.value = {
+    top: `${rect.top + rect.height / 2}px`,
+    left: `${rect.left - 12}px`,
+    transform: 'translateY(-50%) translateX(-100%)'
+  }
+}
+
+// 隐藏 tooltip
+const hideTooltip = () => {
+  tooltipVisible.value = false
 }
 
 // 渲染 Markdown
@@ -800,6 +890,23 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 自定义 tooltip */
+.custom-tooltip {
+  position: fixed;
+  background: #1a1a1a;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  z-index: 9999;
 }
 
 /* 用户信息 */
@@ -1376,18 +1483,59 @@ onMounted(() => {
   height: 36px;
   border-radius: 50%;
   padding: 0;
-  background: #1a1a1a;
+  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
   border: none;
+  color: white;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+  transition: all 0.2s ease;
 }
 
-.send-button:hover {
-  background: #333;
-  transform: scale(1.05);
+.send-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #43A047 0%, #5DAF5E 100%);
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
 }
 
 .send-button:disabled {
-  background: #ddd;
+  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+  opacity: 0.5;
   transform: none;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* 覆盖 Element Plus 的 disabled 默认样式 */
+.send-button :deep(.el-button) {
+  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+  border: none;
+}
+
+.send-button.is-disabled :deep(.el-button) {
+  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+  opacity: 0.5;
+}
+
+.send-button :deep(.el-icon) {
+  font-size: 18px;
+}
+
+.stop-button {
+  padding: 0;
+  min-width: 36px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #a8e6cf;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.stop-button:hover {
+  background: #88d8b0;
 }
 
 /* ===== 深度思考样式 ===== */

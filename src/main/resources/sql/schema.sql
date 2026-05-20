@@ -11,6 +11,9 @@ CREATE TABLE IF NOT EXISTS session (
 );
 
 -- Session chat state table
+-- DEPRECATED: Since v1.1 (Harness migration), session state is now stored
+-- in Harness workspace JSONL files. This table is kept only for backward
+-- compatibility with existing data and can be removed after migration.
 CREATE TABLE IF NOT EXISTS session_chat (
     session_id VARCHAR(255) NOT NULL,
     state_key VARCHAR(255) NOT NULL,

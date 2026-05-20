@@ -30,3 +30,11 @@ packclaw:
   dashscope:
     apiKey: ${DASHSCOPE_API_KEY}
     model: ${DASHSCOPE_MODEL:qwen3-max}
+
+  workspace:
+    path: ${WORKSPACE_PATH:./data/workspace}
+
+  compaction:
+    msg-threshold: ${COMPACTION_MSG_THRESHOLD:10}
+    last-keep: ${COMPACTION_LAST_KEEP:5}
+    token-ratio: ${COMPACTION_TOKEN_RATIO:0.3}

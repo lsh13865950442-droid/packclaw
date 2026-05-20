@@ -39,4 +39,12 @@ springdoc:
 packclaw:
   dashscope:
     apiKey: sk-36498643ea35450d9d6d4d884336646e
-    model: qwen3-max
+    model: qwen3.6-plus
+
+  workspace:
+    path: ./data/workspace
+
+  compaction:
+    msg-threshold: 10
+    last-keep: 5
+    token-ratio: 0.3
