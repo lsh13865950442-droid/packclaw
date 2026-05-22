@@ -24,7 +24,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- Dependency versions -->
-        <agentscope.version>1.1.0-RC1</agentscope.version>
+        <agentscope.version>1.1.0-SNAPSHOT</agentscope.version>
         <mybatis-spring-boot.version>3.0.4</mybatis-spring-boot.version>
         <druid.version>1.2.23</druid.version>
         <postgresql.version>42.7.3</postgresql.version>
@@ -37,6 +37,30 @@
         <pagehelper.version>6.1.0</pagehelper.version>
         <okio.version>3.17.0</okio.version>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>aichem-snapshots</id>
+            <url>http://192.168.0.134/repository/maven-snapshots/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>aichem-releases</id>
+            <url>http://192.168.0.134/repository/maven-releases/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <dependencies>
         <!-- Spring Boot Starter Web -->

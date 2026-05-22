@@ -92,6 +92,15 @@ export const api = {
     return request.post('/history/rename', null, {
       params: { chatId, title }
     })
+  },
+
+  // 上传媒体文件（图像/音频/视频），返回服务器文件路径
+  uploadMediaFile(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return request.post('/file/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
   }
 }
 

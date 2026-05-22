@@ -74,7 +74,7 @@ public class ChatController {
             String query = request.getQuery();
             String sessionId = request.getSessionId();
 
-            processStream(harnessAgentFactory.stream(sessionId, query), sink, query, sessionId);
+            processStream(harnessAgentFactory.stream(sessionId, request), sink, query, sessionId);
 
             return sink.asFlux()
                     .timeout(Duration.ofMinutes(30), Flux.error(new TimeoutException("Response timeout")))

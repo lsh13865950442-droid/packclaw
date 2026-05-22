@@ -158,7 +158,36 @@
         >
           <div class="message-container">
             <div v-if="msg.role === 'user'" class="user-bubble-wrap">
-              <div class="user-bubble">{{ msg.content }}</div>
+              <div class="user-bubble">
+                <!-- 媒体预览（图片缩略图 / 文件徽章） -->
+                <div v-if="msg.mediaItems && msg.mediaItems.length > 0" class="user-media-preview">
+                  <template v-for="(m, mi) in msg.mediaItems" :key="mi">
+                    <!-- 图片：显示缩略图 -->
+                    <template v-if="m.mediaType && m.mediaType.startsWith('image')">
+                      <img
+                        :src="m.previewUrl"
+                        class="msg-image-thumb"
+                        :alt="m.name || '图片'"
+                      />
+                    </template>
+                    <div v-else class="msg-media-badge">
+                      <!-- 视频图标 -->
+                      <svg v-if="m.mediaType && m.mediaType.startsWith('video')" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="5" width="15" height="14" rx="2"/>
+                        <polygon points="22 7 17 10 17 14 22 17 22 7"/>
+                      </svg>
+                      <!-- 音频图标 -->
+                      <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18V5l12-2v13"/>
+                        <circle cx="6" cy="18" r="3"/>
+                        <circle cx="18" cy="16" r="3"/>
+                      </svg>
+                      <span>{{ m.name || m.mediaType }}</span>
+                    </div>
+                  </template>
+                </div>
+                {{ msg.content }}
+              </div>
               <!-- hover 才显示，在气泡下方 -->
               <div class="user-actions">
                 <button class="action-icon-btn" @click="copyText(msg.content, index)" :class="{ copied: copiedIndex === index }" title="复制">
@@ -259,8 +288,8 @@
                 <span></span><span></span><span></span>
               </div>
 
-              <!-- AI 操作栏，一直显示 -->
-              <div v-if="msg.content && !msg.loading" class="assistant-actions">
+              <!-- AI 操作栏，仅在最后一条 assistant 消息末尾显示 -->
+              <div v-if="msg.content && !msg.loading && isLastAssistantMessage(index)" class="assistant-actions">
                 <button class="action-icon-btn" @click="copyText(msg.content, index + 'a')" :class="{ copied: copiedIndex === index + 'a' }" title="复制">
                   <svg v-if="copiedIndex !== index + 'a'" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <rect x="9" y="9" width="13" height="13" rx="2"/>
@@ -296,33 +325,64 @@
       <div class="input-section">
         <div class="input-container">
           <div class="input-box">
+            <!-- 附件预览区（有文件时展示） -->
+            <div v-if="selectedFiles.length > 0" class="file-preview-area">
+              <div
+                v-for="(item, index) in selectedFiles"
+                :key="index"
+                class="preview-item"
+              >
+                <img
+                  v-if="item.type === 'image'"
+                  :src="item.previewUrl"
+                  class="preview-image"
+                  :alt="item.file.name"
+                />
+                <div v-else class="preview-file-badge">
+                  <!-- 视频图标 -->
+                  <svg v-if="item.type === 'video'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="5" width="15" height="14" rx="2"/>
+                    <polygon points="22 7 17 10 17 14 22 17 22 7"/>
+                  </svg>
+                  <!-- 音频图标 -->
+                  <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18V5l12-2v13"/>
+                    <circle cx="6" cy="18" r="3"/>
+                    <circle cx="18" cy="16" r="3"/>
+                  </svg>
+                  <span class="preview-file-name">{{ item.file.name }}</span>
+                </div>
+                <button class="preview-remove" @click.stop="removeFile(index)" title="移除">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
             <el-input
               v-model="inputMessage"
               type="textarea"
               :rows="1"
               :autosize="{ minRows: 1, maxRows: 6 }"
-              placeholder="描述任务，/ 快捷调用，@ 添加上下文，标准模式经济高效"
+              placeholder="告诉我目标，我来搞定"
               @keydown.enter.exact.prevent="sendMessage"
               resize="none"
               class="message-input"
             />
             <div class="input-actions">
               <div class="action-left">
-                <el-button text class="action-btn" @click="openFolderSelect">
-                  <el-icon><Folder /></el-icon>
-                  <span>选择工作目录</span>
-                </el-button>
-                <input 
-                  type="file" 
-                  ref="folderInput" 
-                  webkitdirectory 
-                  directory 
-                  style="display: none" 
-                  @change="handleFolderSelected"
-                />
-                <el-button text class="action-btn-icon" @click="triggerFolderSelect">
+                <el-button text class="action-btn-icon" @click="fileInput?.click()">
                   <el-icon><Plus /></el-icon>
                 </el-button>
+                <input
+                  type="file"
+                  ref="fileInput"
+                  multiple
+                  accept="image/*,audio/*,video/*"
+                  style="display: none"
+                  @change="handleFileSelected"
+                />
               </div>
               <div class="action-right">
                 <span class="model-name">{{ currentModel }}</span>
@@ -375,7 +435,6 @@ const inputMessage = ref('')
 const sessionList = ref([])
 const currentTitle = ref('')
 const messagesContainer = ref(null)
-const folderInput = ref(null)
 const activeNav = ref('new-task')
 const isChatting = ref(false)
 const showSidebar = ref(true)
@@ -461,7 +520,15 @@ const selectSession = async (session) => {
 
       if (role === 'USER') {
         const text = extractMessageText(msg)
-        if (text) chatStore.addMessage({ role: 'user', content: text })
+        // 提取多媒体内容块，还原气泡内展示
+        const mediaItems = extractMessageMedia(msg)
+        if (text || mediaItems.length > 0) {
+          chatStore.addMessage({
+            role: 'user',
+            content: text,
+            mediaItems: mediaItems.length > 0 ? mediaItems : undefined
+          })
+        }
 
       } else if (role === 'ASSISTANT') {
         const text = extractMessageText(msg)
@@ -521,10 +588,35 @@ const sendMessage = async () => {
   inputMessage.value = ''
   isChatting.value = true
 
-  // 添加用户消息
+  // 将已选文件上传到服务器，拿到路径后构建 mediaItems
+  let mediaItems = []
+  const filesToSend = [...selectedFiles.value]
+  if (filesToSend.length > 0) {
+    try {
+      mediaItems = await Promise.all(
+        filesToSend.map(async (item) => {
+          const res = await api.uploadMediaFile(item.file)
+          return {
+            mediaType: item.file.type,
+            filePath: res.data,          // 后端保存后返回的服务器绝对路径
+            name: item.file.name,
+            previewUrl: item.previewUrl  // 仅前端展示用，不发到后端
+          }
+        })
+      )
+    } catch (e) {
+      ElMessage.error('文件上传失败，请重试')
+      return
+    }
+    // 清空预览区
+    selectedFiles.value = []
+  }
+
+  // 添加用户消息（包含 mediaItems用于气泡内展示）
   chatStore.addMessage({
     role: 'user',
-    content: userMessage
+    content: userMessage,
+    mediaItems: mediaItems.length > 0 ? mediaItems : undefined
   })
 
   // 添加加载占位（第一个 REASONING 到来前会被复用）
@@ -556,16 +648,22 @@ const sendMessage = async () => {
         .catch(e => console.error('生成标题失败:', e))
     }
 
+    // 构建请求体（去除 previewUrl，不发到后端）
+    const requestBody = {
+      query: userMessage,
+      sessionId: currentSessionId.value
+    }
+    if (mediaItems.length > 0) {
+      requestBody.mediaItems = mediaItems.map(({ mediaType, filePath, name }) => ({ mediaType, filePath, name }))
+    }
+
     // 流式请求
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        query: userMessage,
-        sessionId: currentSessionId.value
-      })
+      body: JSON.stringify(requestBody)
     })
 
     const reader = response.body.getReader()
@@ -684,30 +782,36 @@ const sendQuickMessage = (message) => {
   sendMessage()
 }
 
-// 触发文件夹选择
-const triggerFolderSelect = () => {
-  if (folderInput.value) {
-    folderInput.value.click()
-  }
+// 文件上传 ref
+const fileInput = ref(null)
+
+// 已选择的文件列表：{ file, previewUrl, type: 'image'|'audio'|'video' }
+const selectedFiles = ref([])
+
+// 将文件加入选择列表并生成预览
+const handleFileSelected = (event) => {
+  const files = Array.from(event.target.files)
+  files.forEach(file => {
+    const prefix = file.type.split('/')[0]
+    const type = ['image', 'audio', 'video'].includes(prefix) ? prefix : 'other'
+    if (type === 'image') {
+      // 图片用 FileReader 生成 data URI，永久有效，不依赖 blob URL 生命周期
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        selectedFiles.value.push({ file, previewUrl: e.target.result, type })
+      }
+      reader.readAsDataURL(file)
+    } else {
+      selectedFiles.value.push({ file, previewUrl: '', type })
+    }
+  })
+  // 重置 input，允许重复选同一文件
+  event.target.value = ''
 }
 
-// 打开文件夹选择（选择工作目录按钮）
-const openFolderSelect = () => {
-  if (folderInput.value) {
-    folderInput.value.click()
-  }
-}
-
-// 处理文件夹选择
-const handleFolderSelected = (event) => {
-  const files = event.target.files
-  if (files.length > 0) {
-    // 获取第一个文件的目录路径
-    const filePath = files[0].webkitRelativePath || files[0].name
-    const folderPath = filePath.split('/')[0]
-    ElMessage.success(`已选择工作目录: ${folderPath}`)
-    // TODO: 将工作目录信息发送到后端或存储在状态中
-  }
+// 移除单个附件
+const removeFile = (index) => {
+  selectedFiles.value.splice(index, 1)
 }
 
 // 提取消息文本（兼容字符串和数组格式）
@@ -728,6 +832,37 @@ const extractMessageThinking = (msg) => {
     return thinkingItem ? thinkingItem.thinking : ''
   }
   return ''
+}
+
+// 从历史消息中提取多媒体内容块（图像/音频/视频）
+const extractMessageMedia = (msg) => {
+  if (!Array.isArray(msg.content)) return []
+  return msg.content
+    .filter(c => ['image', 'audio', 'video'].includes(c.type))
+    .map(c => {
+      const source = c.source || {}
+      const mediaType = source.mediaType || source.media_type || ''
+      // Base64 格式构建 data URI 用于展示
+      const previewUrl = (source.type === 'base64' && mediaType.startsWith('image'))
+        ? `data:${mediaType};base64,${source.data}`
+        : ''
+      return {
+        mediaType,
+        name: '',
+        previewUrl
+      }
+    })
+}
+
+// 判断是否为最后一条 assistant 消息
+const isLastAssistantMessage = (index) => {
+  const msgs = messages.value
+  for (let i = msgs.length - 1; i >= 0; i--) {
+    if (msgs[i].role === 'assistant') {
+      return i === index
+    }
+  }
+  return false
 }
 
 // 截断标题到 15 个字
@@ -1840,6 +1975,124 @@ onMounted(() => {
 .thinking-expand-leave-from {
   opacity: 1;
   max-height: 9999px;
+}
+
+/* ===== 媒体附件预览区（输入框上方） ===== */
+.file-preview-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 4px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 8px;
+}
+
+.preview-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.preview-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #e8e8e8;
+  display: block;
+}
+
+.preview-file-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f5f5f5;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #666;
+  max-width: 160px;
+}
+
+.preview-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 110px;
+}
+
+.preview-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #555;
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 2;
+}
+
+.preview-item:hover .preview-remove {
+  opacity: 1;
+}
+
+/* ===== 消息气泡内媒体展示 ===== */
+.user-media-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.msg-image-thumb {
+  display: block;
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+/* 历史消息图片占位符（无 previewUrl 时显示） */
+.msg-image-placeholder {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(0,0,0,0.03);
+  color: #aaa;
+  font-size: 11px;
+}
+
+.msg-media-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0,0,0,0.05);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #555;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 响应式 */

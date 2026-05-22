@@ -31,6 +31,14 @@ public class WorkspaceInitializer {
             Files.createDirectories(workspaceDir);
 
             PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+            
+            // 先检查 classpath:workspace/ 是否存在
+            Resource workspaceDirResource = resolver.getResource("classpath:workspace/");
+            if (!workspaceDirResource.exists()) {
+                log.warn("classpath:workspace/ directory does not exist, skipping workspace initialization");
+                return;
+            }
+            
             Resource[] resources = resolver.getResources("classpath:workspace/**/*");
 
             for (Resource resource : resources) {

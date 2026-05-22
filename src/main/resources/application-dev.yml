@@ -42,7 +42,7 @@ packclaw:
     model: qwen3.6-plus
 
   workspace:
-    path: ./data/workspace
+    path: /Users/liushihong/code/mycode/agents/PackClaw/data/workspace
 
   compaction:
     msg-threshold: 10
