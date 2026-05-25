@@ -25,3 +25,15 @@ CREATE TABLE IF NOT EXISTS session_chat (
 );
 
 CREATE INDEX IF NOT EXISTS idx_session_chat_session_id ON session_chat(session_id);
+
+-- Model configuration table
+CREATE TABLE IF NOT EXISTS model_config (
+    id SERIAL PRIMARY KEY,
+    provider VARCHAR(50) NOT NULL,
+    api_url VARCHAR(500),
+    model_id VARCHAR(200) NOT NULL,
+    api_key VARCHAR(500) NOT NULL,
+    is_active BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

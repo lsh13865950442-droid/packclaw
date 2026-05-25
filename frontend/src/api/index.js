@@ -101,6 +101,36 @@ export const api = {
     return request.post('/file/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
+  },
+
+  // 获取模型配置列表
+  getModelConfigList() {
+    return request.get('/model-config/list')
+  },
+
+  // 获取激活的模型配置
+  getActiveModelConfig() {
+    return request.get('/model-config/active')
+  },
+
+  // 添加模型配置
+  addModelConfig(data) {
+    return request.post('/model-config', data)
+  },
+
+  // 更新模型配置
+  updateModelConfig(id, data) {
+    return request.put(`/model-config/${id}`, data)
+  },
+
+  // 删除模型配置
+  deleteModelConfig(id) {
+    return request.delete(`/model-config/${id}`)
+  },
+
+  // 激活模型配置
+  activateModelConfig(id) {
+    return request.post(`/model-config/${id}/activate`)
   }
 }
 

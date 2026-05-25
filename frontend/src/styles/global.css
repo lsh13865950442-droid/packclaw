@@ -127,7 +127,7 @@ html.dark .input-box { background: #242424 !important; border-color: #333 !impor
 html.dark .input-box:focus-within { background: #2a2a2a !important; border-color: #444 !important; box-shadow: none !important; }
 html.dark .chat-input { color: #ddd !important; background: transparent !important; }
 html.dark .chat-input::placeholder { color: #555 !important; }
-html.dark .message-input .el-textarea__inner { color: #ddd !important; background: transparent !important; caret-color: #ddd !important; }
+html.dark .message-input .arco-textarea-wrapper textarea { color: #ddd !important; background: transparent !important; caret-color: #ddd !important; }
 html.dark .input-toolbar { border-top-color: #2e2e2e !important; }
 html.dark .model-name { color: #555 !important; }
 html.dark .action-icon-btn { color: #555 !important; }

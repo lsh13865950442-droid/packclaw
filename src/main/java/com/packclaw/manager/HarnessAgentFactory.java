@@ -1,5 +1,6 @@
 package com.packclaw.manager;
 
+import com.packclaw.config.HarnessAgentConfig;
 import com.packclaw.model.req.ChatRequest;
 import io.agentscope.core.agent.Event;
 import io.agentscope.core.agent.RuntimeContext;
@@ -34,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HarnessAgentFactory {
 
     @Resource
-    private ChatModelBase chatModelBase;
+    private HarnessAgentConfig harnessAgentConfig;
 
     @Value("${packclaw.workspace.path:./data/workspace}")
     private String workspacePath;
@@ -148,13 +149,20 @@ public class HarnessAgentFactory {
 
     /**
      * 创建新的 HarnessAgent 实例
+     * 每次从数据库获取最新的激活模型配置并创建 ChatModelBase
      */
     private HarnessAgent createAgent() {
         Path workspace = Path.of(workspacePath);
+        
+        // 动态获取最新的模型配置并创建 ChatModelBase
+        ChatModelBase currentModel = harnessAgentConfig.createChatModel();
+        if (currentModel == null) {
+            throw new IllegalStateException("ChatModelBase is not initialized. Please check model configuration.");
+        }
 
         HarnessAgent agent = HarnessAgent.builder()
                 .name("PackClawAgent")
-                .model(chatModelBase)
+                .model(currentModel)
                 .workspace(workspace)
                 .compaction(CompactionConfig.builder().build())
                 .toolResultEviction(ToolResultEvictionConfig.builder().build())

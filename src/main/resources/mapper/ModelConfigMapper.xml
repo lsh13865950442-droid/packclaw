@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.packclaw.mapper.ModelConfigMapper">
+
+    <resultMap id="ModelConfigResultMap" type="com.packclaw.model.po.ModelConfig">
+        <id property="id" column="id"/>
+        <result property="provider" column="provider"/>
+        <result property="apiUrl" column="api_url"/>
+        <result property="modelId" column="model_id"/>
+        <result property="apiKey" column="api_key"/>
+        <result property="isActive" column="is_active"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="selectAll" resultMap="ModelConfigResultMap">
+        SELECT id, provider, api_url, model_id, api_key, is_active,
+               created_at, updated_at
+        FROM model_config
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="selectById" resultMap="ModelConfigResultMap">
+        SELECT id, provider, api_url, model_id, api_key, is_active,
+               created_at, updated_at
+        FROM model_config
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectActive" resultMap="ModelConfigResultMap">
+        SELECT id, provider, api_url, model_id, api_key, is_active,
+               created_at, updated_at
+        FROM model_config
+        WHERE is_active = TRUE
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="com.packclaw.model.po.ModelConfig">
+        INSERT INTO model_config (provider, api_url, model_id, api_key, is_active)
+        VALUES (#{provider}, #{apiUrl}, #{modelId}, #{apiKey}, #{isActive, jdbcType=BOOLEAN})
+        RETURNING id
+    </insert>
+
+    <update id="update" parameterType="com.packclaw.model.po.ModelConfig">
+        UPDATE model_config
+        SET provider = #{provider},
+            api_url = #{apiUrl},
+            model_id = #{modelId},
+            api_key = #{apiKey},
+            is_active = #{isActive, jdbcType=BOOLEAN},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM model_config WHERE id = #{id}
+    </delete>
+
+</mapper>

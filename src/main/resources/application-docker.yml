@@ -9,8 +9,8 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5432/packclaw?currentSchema=public
-    username: root
-    password: lsh123456
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:lsh123456}
     type: com.alibaba.druid.pool.DruidDataSource
 
   servlet:
@@ -37,7 +37,7 @@ springdoc:
 
 packclaw:
   workspace:
-    path: /Users/liushihong/code/mycode/agents/PackClaw/data/workspace
+    path: ${HOME}/.packclaw/workspace
   compaction:
     msg-threshold: 10
     last-keep: 5

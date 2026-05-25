@@ -26,15 +26,20 @@
           :class="{ active: activeNav === 'new-task' }"
           @click="handleNewTask"
         >
-          <el-icon class="nav-icon"><Plus /></el-icon>
+          <component :is="IconPlus" class="nav-icon" />
           <span>新任务</span>
         </div>
         <div class="nav-item">
-          <el-icon class="nav-icon"><Tools /></el-icon>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+          </svg>
           <span>技能</span>
         </div>
         <div class="nav-item">
-          <el-icon class="nav-icon"><Clock /></el-icon>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-icon">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
           <span>定时任务</span>
         </div>
       </nav>
@@ -56,9 +61,15 @@
       <!-- 版本信息 -->
       <div class="version-section">
         <span class="version-text">v0.0.1</span>
-        <el-icon class="settings-icon" title="设置"><Setting /></el-icon>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="settings-icon" title="设置" @click="openSettings">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
       </div>
     </aside>
+
+    <!-- 设置弹窗 -->
+    <Settings ref="settingsRef" />
 
     <!-- 自定义 tooltip -->
     <div class="custom-tooltip" v-show="tooltipVisible" :style="tooltipStyle">
@@ -70,13 +81,17 @@
       <!-- 顶部栏 -->
       <header class="top-bar">
         <div class="header-left">
-          <el-icon class="menu-icon" v-if="!showSidebar"><Expand /></el-icon>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="menu-icon" v-if="!showSidebar">
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
         </div>
         <div class="header-center">
           <span class="page-title">{{ currentTitle || '' }}</span>
         </div>
         <div class="header-right">
-          <el-button text class="theme-btn" @click="toggleTheme" :title="isDark ? '切换亮色模式' : '切换暗色模式'">
+          <a-button text class="theme-btn" @click="toggleTheme" :title="isDark ? '切换亮色模式' : '切换暗色模式'">
             <!-- 月亮图标（暗色模式时显示） -->
             <svg v-if="isDark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
@@ -93,7 +108,7 @@
               <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
               <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
             </svg>
-          </el-button>
+          </a-button>
         </div>
       </header>
 
@@ -123,21 +138,33 @@
           <div class="feature-cards">
             <div class="feature-card" @click="sendQuickMessage('帮我整理一下文件')">
               <div class="card-icon">
-                <el-icon :size="24"><FolderOpened /></el-icon>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
               </div>
               <h3>文件整理</h3>
               <p>智能整理和管理本地文件</p>
             </div>
             <div class="feature-card" @click="sendQuickMessage('帮我写一篇文章')">
               <div class="card-icon">
-                <el-icon :size="24"><Document /></el-icon>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10 9 9 9 8 9"/>
+                </svg>
               </div>
               <h3>内容创作</h3>
               <p>创作演示文稿、文档和多媒体内容</p>
             </div>
             <div class="feature-card" @click="sendQuickMessage('帮我分析这份数据')">
               <div class="card-icon">
-                <el-icon :size="24"><DataAnalysis /></el-icon>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="20" x2="18" y2="10"/>
+                  <line x1="12" y1="20" x2="12" y2="4"/>
+                  <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
               </div>
               <h3>文档处理</h3>
               <p>处理和分析文档数据</p>
@@ -288,6 +315,13 @@
                 <span></span><span></span><span></span>
               </div>
 
+              <!-- 错误消息 -->
+              <div v-if="msg.error && msg.contentBlocks" class="error-message-block">
+                <div v-for="(block, idx) in msg.contentBlocks.filter(b => b.type === 'text')" :key="idx" class="error-content">
+                  <div v-html="renderMarkdown(block.text)"></div>
+                </div>
+              </div>
+
               <!-- AI 操作栏，仅在最后一条 assistant 消息末尾显示 -->
               <div v-if="msg.content && !msg.loading && isLastAssistantMessage(index)" class="assistant-actions">
                 <button class="action-icon-btn" @click="copyText(msg.content, index + 'a')" :class="{ copied: copiedIndex === index + 'a' }" title="复制">
@@ -360,21 +394,19 @@
                 </button>
               </div>
             </div>
-            <el-input
+            <a-textarea
               v-model="inputMessage"
-              type="textarea"
-              :rows="1"
-              :autosize="{ minRows: 1, maxRows: 6 }"
+              :auto-size="{ minRows: 1, maxRows: 6 }"
               placeholder="告诉我目标，我来搞定"
               @keydown.enter.exact.prevent="sendMessage"
-              resize="none"
+              :resize="false"
               class="message-input"
             />
             <div class="input-actions">
               <div class="action-left">
-                <el-button text class="action-btn-icon" @click="fileInput?.click()">
-                  <el-icon><Plus /></el-icon>
-                </el-button>
+                <a-button text class="action-btn-icon" @click="fileInput?.click()">
+                  <component :is="IconPlus" />
+                </a-button>
                 <input
                   type="file"
                   ref="fileInput"
@@ -385,26 +417,41 @@
                 />
               </div>
               <div class="action-right">
-                <span class="model-name">{{ currentModel }}</span>
-                <el-button 
+                <div class="model-selector" v-if="enabledModels.length > 0" @click="toggleModelDropdown">
+                  <span class="model-display">{{ currentModel }}</span>
+                  <svg class="model-dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <div class="model-dropdown" v-show="showModelDropdown" @click.stop>
+                    <div 
+                      v-for="model in enabledModels" 
+                      :key="model.id" 
+                      class="model-option"
+                      :class="{ active: model.id === currentModelId }"
+                      @click="selectModel(model)"
+                    >
+                      {{ model.modelId }}
+                    </div>
+                  </div>
+                </div>
+                <a-button 
                   v-if="!isStreaming"
                   type="primary" 
                   class="send-button"
-                  :disabled="!inputMessage.trim()"
+                  :disabled="!inputMessage.trim() || enabledModels.length === 0"
                   @click="sendMessage"
+                  :title="enabledModels.length === 0 ? '请先配置模型' : '发送'"
                 >
-                  <el-icon><Top /></el-icon>
-                </el-button>
-                <el-button 
+                  <component :is="IconArrowUp" />
+                </a-button>
+                <a-button 
                   v-else
                   type="danger" 
                   class="stop-button"
                   @click="stopGeneration"
                 >
-                  <svg viewBox="0 0 24 24" fill="white" width="14" height="14">
-                    <rect x="6" y="6" width="12" height="12" rx="2"/>
-                  </svg>
-                </el-button>
+                  <component :is="IconStop" />
+                </a-button>
               </div>
             </div>
           </div>
@@ -421,11 +468,13 @@ import { useChatStore, _extractResultText } from '../stores/chat'
 import { api } from '../api'
 import { marked } from 'marked'
 import { 
-  Plus, Tools, Clock,
-  QuestionFilled, Sunny, FolderOpened, Document, DataAnalysis,
-  Folder, Top, Setting, Expand
-} from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+  IconPlus, 
+  IconArrowUp,
+  IconStop,
+  IconSettings
+} from '@arco-design/web-vue/es/icon'
+import { Message } from '@arco-design/web-vue'
+import Settings from './Settings.vue'
 
 const chatStore = useChatStore()
 // 用 storeToRefs 保持响应性
@@ -438,6 +487,7 @@ const messagesContainer = ref(null)
 const activeNav = ref('new-task')
 const isChatting = ref(false)
 const showSidebar = ref(true)
+const settingsRef = ref(null)
 
 // Tooltip 状态
 const tooltipVisible = ref(false)
@@ -480,8 +530,11 @@ watch(() => messages.value.length, async () => {
   initObserver()
 })
 
-// 当前选择的模型名称，后续从设置中读取
-const currentModel = ref('qwen3-max')
+// 当前选择的模型名称，从数据库获取
+const currentModel = ref('')
+const currentModelId = ref(null)
+const enabledModels = ref([])
+const showModelDropdown = ref(false)
 
 // 加载会话列表
 const loadSessionList = async () => {
@@ -491,6 +544,72 @@ const loadSessionList = async () => {
   } catch (error) {
     console.error('加载会话列表失败:', error)
   }
+}
+
+// 加载启用的模型列表
+const loadEnabledModels = async () => {
+  try {
+    const res = await api.getModelConfigList()
+    enabledModels.value = res.data || []
+    
+    // 如果有模型，从数据库获取当前激活的模型
+    if (enabledModels.value.length > 0) {
+      try {
+        // 获取激活的模型
+        const activeRes = await api.getActiveModelConfig()
+        const activeModel = activeRes.data
+        
+        if (activeModel) {
+          currentModelId.value = activeModel.id
+          currentModel.value = activeModel.modelId
+        } else {
+          // 如果没有激活的模型，使用第一个
+          const firstModel = enabledModels.value[0]
+          currentModelId.value = firstModel.id
+          currentModel.value = firstModel.modelId
+        }
+      } catch (error) {
+        // 获取失败，使用第一个模型
+        const firstModel = enabledModels.value[0]
+        currentModelId.value = firstModel.id
+        currentModel.value = firstModel.modelId
+      }
+    }
+  } catch (error) {
+    console.error('加载模型列表失败:', error)
+  }
+}
+
+// 模型切换
+const selectModel = async (model) => {
+  // 先关闭下拉框
+  showModelDropdown.value = false
+  
+  // 如果选择的是当前模型，不做任何操作
+  if (model.id === currentModelId.value) {
+    return
+  }
+  
+  // 调用接口切换到选中的模型
+  try {
+    await api.activateModelConfig(model.id)
+    currentModel.value = model.modelId
+    currentModelId.value = model.id
+    Message.success(`已切换到 ${model.modelId}`)
+    await loadEnabledModels()
+  } catch (error) {
+    Message.error('切换模型失败')
+  }
+}
+
+// 切换下拉框显示
+const toggleModelDropdown = () => {
+  showModelDropdown.value = !showModelDropdown.value
+}
+
+// 打开设置弹窗
+const openSettings = () => {
+  settingsRef.value?.open()
 }
 
 // 创建新聊天
@@ -571,7 +690,7 @@ const selectSession = async (session) => {
       }
     }
   } catch (error) {
-    ElMessage.error('加载会话失败')
+    Message.error('加载会话失败')
   }
 }
 
@@ -583,6 +702,12 @@ const stopGeneration = () => {
 // 发送消息
 const sendMessage = async () => {
   if (!inputMessage.value.trim() || isStreaming.value) return
+  
+  // 检查是否配置了模型
+  if (enabledModels.value.length === 0) {
+    Message.warning('当前没有可用模型，请先配置模型')
+    return
+  }
 
   const userMessage = inputMessage.value.trim()
   inputMessage.value = ''
@@ -605,7 +730,7 @@ const sendMessage = async () => {
         })
       )
     } catch (e) {
-      ElMessage.error('文件上传失败，请重试')
+      Message.error('文件上传失败,请重试')
       return
     }
     // 清空预览区
@@ -701,10 +826,82 @@ const sendMessage = async () => {
 
         try {
           const parsed = JSON.parse(data)
-          const eventType = parsed.type          // REASONING | TOOL_RESULT
+          const eventType = parsed.type          // REASONING | TOOL_RESULT | ERROR
           const isLast = parsed.isLast === true   // 注意：字段名是 isLast
           const messageId = parsed.messageId
           const msg = parsed.message
+
+          // 处理错误消息 - 必须在 msg 检查之前
+          if (eventType === 'error' || parsed.type === 'error') {
+            const errorMessage = parsed.content || parsed.message?.content || '未知错误'
+            chatStore.setStreaming(false)
+            
+            // 分析错误并提供友好的提示
+            let errorTitle = '对话出错'
+            let errorDetail = errorMessage
+            let suggestions = []
+            
+            if (errorMessage.includes('API key') || errorMessage.includes('authentication')) {
+              errorTitle = 'API密钥错误'
+              errorDetail = '模型API密钥无效或已过期'
+              suggestions = ['检查设置中的API密钥是否正确', '确认API密钥是否已过期']
+            } else if (errorMessage.includes('model') && (errorMessage.includes('not found') || errorMessage.includes('invalid'))) {
+              errorTitle = '模型配置错误'
+              errorDetail = '模型ID无效或不存在'
+              suggestions = ['检查设置中的模型ID是否正确', '确认该模型是否可用']
+            } else if (errorMessage.includes('rate limit') || errorMessage.includes('quota')) {
+              errorTitle = '请求频率超限'
+              errorDetail = 'API请求频率过高或额度已用完'
+              suggestions = ['稍后重试', '检查API账户的额度和限制']
+            } else if (errorMessage.includes('network') || errorMessage.includes('connection')) {
+              errorTitle = '网络连接错误'
+              errorDetail = '无法连接到模型服务'
+              suggestions = ['检查网络连接', '确认API地址是否正确', '稍后重试']
+            } else if (errorMessage.includes('timeout')) {
+              errorTitle = '请求超时'
+              errorDetail = '模型服务响应超时'
+              suggestions = ['检查网络连接', '稍后重试', '尝试简化问题']
+            } else {
+              suggestions = ['检查网络连接', '确认模型配置是否正确', '稍后重试']
+            }
+            
+            // 在对话框中添加错误消息
+            const errorBlock = {
+              type: 'text',
+              text: `❌ **${errorTitle}**\n\n${errorDetail}\n\n**建议解决方案：**\n${suggestions.map((s, i) => `${i + 1}. ${s}`).join('\n')}`
+            }
+            
+            // 找到当前助手消息并添加错误块
+            let assistantMsg = messages.value.find(m => m.role === 'assistant' && m.messageId === messageId)
+            
+            // 如果没找到，使用最后一条助手消息
+            if (!assistantMsg) {
+              assistantMsg = messages.value.filter(m => m.role === 'assistant').pop()
+            }
+            
+            if (assistantMsg) {
+              if (!assistantMsg.contentBlocks) {
+                assistantMsg.contentBlocks = []
+              }
+              assistantMsg.contentBlocks.push(errorBlock)
+              assistantMsg.error = true
+              assistantMsg.loading = false  // 停止加载动画
+            } else {
+              // 如果完全没有助手消息，创建一个
+              messages.value.push({
+                role: 'assistant',
+                messageId: messageId || 'error-' + Date.now(),
+                content: '',
+                contentBlocks: [errorBlock],
+                error: true,
+                loading: false
+              })
+            }
+            
+            scrollToBottom()
+            continue
+          }
+
           if (!msg) continue
 
           const contentBlocks = Array.isArray(msg.content) ? msg.content : []
@@ -730,7 +927,7 @@ const sendMessage = async () => {
     }
 
   } catch (error) {
-    ElMessage.error('发送消息失败')
+    Message.error('发送消息失败')
     chatStore.setStreaming(false)
   }
 }
@@ -932,6 +1129,21 @@ const formatTime = (timestamp) => {
 
 onMounted(() => {
   loadSessionList()
+  loadEnabledModels()
+  
+  // 监听模型配置更新事件
+  const handleModelConfigUpdated = async () => {
+    await loadEnabledModels()
+  }
+  window.addEventListener('modelConfigUpdated', handleModelConfigUpdated)
+  
+  // 点击外部关闭下拉框
+  document.addEventListener('click', (e) => {
+    const modelSelector = e.target.closest('.model-selector')
+    if (!modelSelector) {
+      showModelDropdown.value = false
+    }
+  })
 })
 </script>
 
@@ -1601,6 +1813,10 @@ onMounted(() => {
   border-radius: 24px;
   padding: 12px 16px;
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .input-box:focus-within {
@@ -1609,17 +1825,49 @@ onMounted(() => {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
-.input-box :deep(.el-textarea__inner) {
+.input-box :deep(.arco-textarea) {
+  width: 100%;
+}
+
+.input-box :deep(.arco-textarea-wrapper) {
   background: transparent;
-  border: none;
-  box-shadow: none;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.input-box :deep(.arco-textarea-wrapper:hover) {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.input-box :deep(.arco-textarea-wrapper.arco-textarea-focus) {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.input-box :deep(.arco-textarea-wrapper textarea) {
+  background: transparent;
+  border: none !important;
+  box-shadow: none !important;
   font-size: 15px;
   color: #333;
   padding: 4px 8px;
   line-height: 1.6;
+  resize: none;
+  cursor: text;
+  pointer-events: auto;
+  min-height: 24px !important;
+  height: auto !important;
+  outline: none !important;
 }
 
-.input-box :deep(.el-textarea__inner::placeholder) {
+.input-box :deep(.arco-textarea-wrapper textarea:focus) {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.input-box :deep(.arco-textarea-wrapper textarea::placeholder) {
   color: #bbb;
   font-size: 14px;
 }
@@ -1649,16 +1897,37 @@ onMounted(() => {
 }
 
 .action-btn-icon {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   padding: 0;
+  color: #888;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.action-btn-icon :deep(.arco-icon) {
+  font-size: 18px;
   color: #888;
 }
 
 .action-btn-icon:hover {
-  background: #f0f0f0;
+  background: #f0f0f0 !important;
   color: #555;
+}
+
+.action-btn-icon:hover :deep(.arco-icon) {
+  color: #555;
+}
+
+.action-btn-icon :deep(.arco-btn-text) {
+  padding: 0;
+  background: transparent !important;
+  border: none !important;
 }
 
 .action-right {
@@ -1667,79 +1936,169 @@ onMounted(() => {
   gap: 8px;
 }
 
+.model-selector {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.model-selector:hover {
+  background: #f5f5f5;
+}
+
+.model-display {
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+}
+
+.model-dropdown-icon {
+  color: #999;
+  transition: transform 0.2s;
+}
+
+.model-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  background: white;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 6px;
+  min-width: 160px;
+  z-index: 1000;
+}
+
+.model-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.model-option:hover {
+  background: #f5f5f5;
+}
+
+.model-option.active {
+  background: #f0f7f0;
+  color: #4CAF50;
+  font-weight: 500;
+}
+
 .mode-select {
   width: 90px;
 }
 
-.model-name {
-  font-size: 13px;
-  color: #888;
-  font-weight: 500;
-  padding: 4px 12px;
-  background: #f5f5f5;
-  border-radius: 20px;
-  cursor: default;
-}
-
-.mode-select :deep(.el-input__wrapper) {
-  background: transparent;
-  box-shadow: none;
-}
-
 .send-button {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
   border-radius: 50%;
   padding: 0;
-  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
-  border: none;
-  color: white;
+  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%) !important;
+  border: none !important;
+  color: white !important;
   box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.send-button :deep(.arco-btn) {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  color: white !important;
+}
+
+.send-button :deep(.arco-icon) {
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white !important;
 }
 
 .send-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #43A047 0%, #5DAF5E 100%);
+  background: linear-gradient(135deg, #43A047 0%, #5DAF5E 100%) !important;
   transform: scale(1.08);
   box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
 }
 
 .send-button:disabled {
-  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%) !important;
   opacity: 0.5;
   transform: none;
   box-shadow: none;
   cursor: not-allowed;
 }
 
-/* 覆盖 Element Plus 的 disabled 默认样式 */
-.send-button :deep(.el-button) {
-  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+.send-button :deep(.arco-btn) {
+  padding: 0;
+  background: transparent;
   border: none;
+  color: white;
 }
 
-.send-button.is-disabled :deep(.el-button) {
-  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
-  opacity: 0.5;
-}
-
-.send-button :deep(.el-icon) {
-  font-size: 18px;
+.send-button :deep(.arco-icon) {
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .stop-button {
   padding: 0;
-  min-width: 36px;
-  width: 36px;
-  height: 36px;
+  min-width: 32px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: #a8e6cf;
-  border: none;
+  background: #a8e6cf !important;
+  border: none !important;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: background 0.2s;
+}
+
+.stop-button :deep(.arco-btn) {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  color: white !important;
+}
+
+.stop-button :deep(.arco-icon) {
+  color: white !important;
+}
+
+.stop-button:hover {
+  background: #88d8b0 !important;
+}
+
+.stop-button :deep(.arco-btn) {
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: white;
 }
 
 .stop-button:hover {
@@ -2111,6 +2470,41 @@ onMounted(() => {
   .feature-cards {
     grid-template-columns: 1fr;
   }
+}
+
+/* 错误消息样式 */
+.error-message-block {
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+  border: 1px solid #ffcdd2;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 8px 0;
+}
+
+.error-content {
+  color: #d32f2f;
+  line-height: 1.6;
+}
+
+.error-content :deep(h1),
+.error-content :deep(h2),
+.error-content :deep(h3) {
+  color: #c62828;
+  margin: 12px 0 8px 0;
+}
+
+.error-content :deep(p) {
+  margin: 8px 0;
+}
+
+.error-content :deep(ul),
+.error-content :deep(ol) {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.error-content :deep(li) {
+  margin: 4px 0;
 }
 
 </style>

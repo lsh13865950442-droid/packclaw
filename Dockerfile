@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jdk-jammy
+FROM docker.m.daocloud.io/eclipse-temurin:21-jdk-jammy
 
 WORKDIR /app
 

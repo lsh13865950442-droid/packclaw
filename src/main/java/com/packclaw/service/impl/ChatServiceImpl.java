@@ -1,6 +1,7 @@
 package com.packclaw.service.impl;
 
 import com.alibaba.fastjson2.JSON;
+import com.packclaw.config.HarnessAgentConfig;
 import com.packclaw.mapper.SessionMapper;
 import com.packclaw.model.po.Session;
 import com.packclaw.service.ChatService;
@@ -21,7 +22,7 @@ import java.util.List;
 public class ChatServiceImpl implements ChatService {
 
     @Resource
-    private ChatModelBase chatModelBase;
+    private HarnessAgentConfig harnessAgentConfig;
 
     @Resource
     private SessionMapper sessionMapper;
@@ -55,10 +56,16 @@ public class ChatServiceImpl implements ChatService {
         String prompt = "请为以下用户问题生成一个简洁的标题（10字以内），只返回标题，不要其他内容：\n" + query;
 
         try {
+            ChatModelBase currentModel = harnessAgentConfig.createChatModel();
+            if (currentModel == null) {
+                log.warn("ChatModelBase is not initialized, cannot generate title for session: {}", sessionId);
+                return query.length() > 10 ? query.substring(0, 10) : query;
+            }
+            
             ReActAgent agent = ReActAgent.builder()
                     .name("TitleAgent")
                     .sysPrompt("你是一个标题生成助手，只返回标题，不返回其他内容。")
-                    .model(chatModelBase)
+                    .model(currentModel)
                     .maxIters(1)
                     .build();
 
@@ -86,10 +93,16 @@ public class ChatServiceImpl implements ChatService {
 
             String prompt = "请基于以下用户问题生成3个可能的后续问题或指令。返回一个JSON数组，只包含3个字符串，例如：[\"问题1\", \"问题2\", \"问题3\"]\n\n用户问题: " + userQuery;
 
+            ChatModelBase currentModel = harnessAgentConfig.createChatModel();
+            if (currentModel == null) {
+                log.warn("ChatModelBase is not initialized, cannot generate suggestions for session: {}", sessionId);
+                return new ArrayList<>();
+            }
+
             ReActAgent agent = ReActAgent.builder()
                     .name("SuggestionsAgent")
                     .sysPrompt("你是一个后续问题生成助手，只返回JSON数组，不返回其他内容。")
-                    .model(chatModelBase)
+                    .model(currentModel)
                     .maxIters(1)
                     .build();
 

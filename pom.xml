@@ -38,6 +38,8 @@
         <okio.version>3.17.0</okio.version>
     </properties>
 
+    <!-- 临时禁用私有仓库，使用 Maven 中央仓库 -->
+    <!--
     <repositories>
         <repository>
             <id>aichem-snapshots</id>
@@ -61,6 +63,7 @@
             </snapshots>
         </repository>
     </repositories>
+    -->
 
     <dependencies>
         <!-- Spring Boot Starter Web -->
