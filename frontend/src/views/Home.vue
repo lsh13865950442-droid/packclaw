@@ -35,6 +35,14 @@
           </svg>
           <span>技能</span>
         </div>
+        <div class="nav-item" @click="goToMemories">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            <path d="M8 7h8M8 11h6"/>
+          </svg>
+          <span>记忆</span>
+        </div>
         <div class="nav-item">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-icon">
             <circle cx="12" cy="12" r="10"/>
@@ -83,8 +91,13 @@
         <Skills />
       </div>
 
+      <!-- 记忆管理视图 -->
+      <div v-else-if="currentView === 'memories'" class="memories-view-container">
+        <Memories />
+      </div>
+
       <!-- 聊天视图 -->
-      <template v-else>
+      <div v-else class="chat-view-container">
       <!-- 顶部栏 -->
       <header class="top-bar">
         <div class="header-left">
@@ -457,14 +470,14 @@
                   class="stop-button"
                   @click="stopGeneration"
                 >
-                  <component :is="IconStop" />
+                  <div class="stop-icon"></div>
                 </a-button>
               </div>
             </div>
           </div>
         </div>
       </div>
-      </template>
+      </div>
     </main>
   </div>
 </template>
@@ -484,6 +497,7 @@ import {
 import { Message } from '@arco-design/web-vue'
 import Settings from './Settings.vue'
 import Skills from './Skills.vue'
+import Memories from './Memories.vue'
 
 const chatStore = useChatStore()
 // 用 storeToRefs 保持响应性
@@ -627,6 +641,11 @@ const currentView = ref('chat')
 // 跳转到技能页面
 const goToSkills = () => {
   currentView.value = 'skills'
+}
+
+// 跳转到记忆页面
+const goToMemories = () => {
+  currentView.value = 'memories'
 }
 
 // 创建新聊天
@@ -1404,7 +1423,23 @@ onMounted(() => {
 /* 技能视图容器 */
 .skills-view-container {
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+/* 记忆视图容器 */
+.memories-view-container {
+  flex: 1;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+/* 聊天视图容器 */
+.chat-view-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: #ffffff;
 }
 
@@ -2111,6 +2146,13 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(245, 34, 45, 0.3);
+}
+
+.stop-icon {
+  width: 12px;
+  height: 12px;
+  background-color: white;
+  border-radius: 2px;
 }
 
 .stop-button :deep(.arco-btn) {

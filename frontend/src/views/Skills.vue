@@ -420,6 +420,7 @@ onMounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* 技能内容查看弹窗样式 */

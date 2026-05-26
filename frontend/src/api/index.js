@@ -174,6 +174,35 @@ export const api = {
     return request.get('/skill-config/read-skill', {
       params: { path: extractedPath }
     })
+  },
+
+  // ========== 记忆相关 API ==========
+  
+  // 读取记忆文件
+  readMemoryFile(fileName) {
+    return request.get('/memory/read', {
+      params: { file: fileName }
+    })
+  },
+
+  // 保存记忆文件
+  saveMemoryFile(fileName, content) {
+    return request.post('/memory/save', content, {
+      params: { file: fileName },
+      headers: { 'Content-Type': 'text/plain' }
+    })
+  },
+
+  // 获取每日记忆列表
+  listDailyMemories() {
+    return request.get('/memory/daily/list')
+  },
+
+  // 读取每日记忆
+  readDailyMemory(fileName) {
+    return request.get('/memory/daily/read', {
+      params: { file: fileName }
+    })
   }
 }
 
