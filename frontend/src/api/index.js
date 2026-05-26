@@ -131,6 +131,49 @@ export const api = {
   // 激活模型配置
   activateModelConfig(id) {
     return request.post(`/model-config/${id}/activate`)
+  },
+
+  // ========== Skill 相关 API ==========
+  
+  // 获取技能配置列表
+  getSkillConfigList() {
+    return request.get('/skill-config/list')
+  },
+
+  // 添加技能配置
+  addSkillConfig(data) {
+    return request.post('/skill-config', data)
+  },
+
+  // 更新技能配置
+  updateSkillConfig(id, data) {
+    return request.put(`/skill-config/${id}`, data)
+  },
+
+  // 删除技能配置
+  deleteSkillConfig(id) {
+    return request.delete(`/skill-config/${id}`)
+  },
+
+  // 切换技能启用状态
+  toggleSkillEnabled(id, isEnabled) {
+    return request.post(`/skill-config/${id}/toggle`, null, {
+      params: { isEnabled }
+    })
+  },
+
+  // 上传技能文件（zip或md）
+  uploadSkillFile(formData) {
+    return request.post('/skill-config/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+
+  // 从解压目录读取 SKILL.md 内容
+  readSkillFromFile(extractedPath) {
+    return request.get('/skill-config/read-skill', {
+      params: { path: extractedPath }
+    })
   }
 }
 

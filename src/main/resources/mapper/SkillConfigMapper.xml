@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.packclaw.mapper.SkillConfigMapper">
+
+    <resultMap id="SkillConfigResultMap" type="com.packclaw.model.po.SkillConfig">
+        <id property="id" column="id"/>
+        <result property="skillName" column="skill_name"/>
+        <result property="description" column="description"/>
+        <result property="skillPath" column="skill_path"/>
+        <result property="isEnabled" column="is_enabled"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="selectAll" resultMap="SkillConfigResultMap">
+        SELECT id, skill_name, description, skill_path, is_enabled, created_at, updated_at
+        FROM skill_config
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="selectById" resultMap="SkillConfigResultMap">
+        SELECT id, skill_name, description, skill_path, is_enabled, created_at, updated_at
+        FROM skill_config
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insert" parameterType="com.packclaw.model.po.SkillConfig" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO skill_config (skill_name, description, skill_path, is_enabled, created_at, updated_at)
+        VALUES (#{skillName}, #{description}, #{skillPath}, #{isEnabled}, NOW(), NOW())
+    </insert>
+
+    <update id="update" parameterType="com.packclaw.model.po.SkillConfig">
+        UPDATE skill_config
+        SET skill_name = #{skillName},
+            description = #{description},
+            skill_path = #{skillPath},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateEnabledStatus">
+        UPDATE skill_config
+        SET is_enabled = #{isEnabled},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM skill_config
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

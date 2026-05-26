@@ -29,7 +29,7 @@
           <component :is="IconPlus" class="nav-icon" />
           <span>新任务</span>
         </div>
-        <div class="nav-item">
+        <div class="nav-item" @click="goToSkills">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
             <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
           </svg>
@@ -78,6 +78,13 @@
 
     <!-- 中间主内容区 -->
     <main class="main-content">
+      <!-- 技能管理视图 -->
+      <div v-if="currentView === 'skills'" class="skills-view-container">
+        <Skills />
+      </div>
+
+      <!-- 聊天视图 -->
+      <template v-else>
       <!-- 顶部栏 -->
       <header class="top-bar">
         <div class="header-left">
@@ -322,8 +329,8 @@
                 </div>
               </div>
 
-              <!-- AI 操作栏，仅在最后一条 assistant 消息末尾显示 -->
-              <div v-if="msg.content && !msg.loading && isLastAssistantMessage(index)" class="assistant-actions">
+              <!-- AI 操作栏，仅在最后一条消息完成且当前不在流式输出时显示 -->
+              <div v-if="msg.content && !msg.loading && !isStreaming && isLastAssistantMessage(index)" class="assistant-actions">
                 <button class="action-icon-btn" @click="copyText(msg.content, index + 'a')" :class="{ copied: copiedIndex === index + 'a' }" title="复制">
                   <svg v-if="copiedIndex !== index + 'a'" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <rect x="9" y="9" width="13" height="13" rx="2"/>
@@ -457,6 +464,7 @@
           </div>
         </div>
       </div>
+      </template>
     </main>
   </div>
 </template>
@@ -475,6 +483,7 @@ import {
 } from '@arco-design/web-vue/es/icon'
 import { Message } from '@arco-design/web-vue'
 import Settings from './Settings.vue'
+import Skills from './Skills.vue'
 
 const chatStore = useChatStore()
 // 用 storeToRefs 保持响应性
@@ -612,8 +621,17 @@ const openSettings = () => {
   settingsRef.value?.open()
 }
 
+// 当前视图：'chat' | 'skills'
+const currentView = ref('chat')
+
+// 跳转到技能页面
+const goToSkills = () => {
+  currentView.value = 'skills'
+}
+
 // 创建新聊天
 const handleNewTask = async () => {
+  currentView.value = 'chat'
   chatStore.clearMessages()
   chatStore.setCurrentSession('')
   currentTitle.value = ''
@@ -624,6 +642,7 @@ const handleNewTask = async () => {
 
 // 选择会话
 const selectSession = async (session) => {
+  currentView.value = 'chat'
   try {
     const res = await api.getSessionDetails(session.chatId)
     chatStore.setCurrentSession(session.chatId, session.chatId)
@@ -1373,6 +1392,13 @@ onMounted(() => {
   border-radius: 16px;
   border: 1px solid #ebebeb;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* 技能视图容器 */
+.skills-view-container {
+  flex: 1;
+  overflow-y: auto;
+  background: #ffffff;
 }
 
 /* 顶部栏 */

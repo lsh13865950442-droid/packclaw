@@ -45,6 +45,7 @@ public class DatabaseInitializer implements CommandLineRunner {
             verifyTableExists("model_config");
             verifyTableExists("session");
             verifyTableExists("session_chat");
+            verifyTableExists("skill_config");
             
             log.info("数据库初始化脚本执行成功！");
         } catch (Exception e) {

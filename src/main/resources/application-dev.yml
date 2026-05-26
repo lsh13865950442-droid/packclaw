@@ -42,3 +42,11 @@ packclaw:
     msg-threshold: 10
     last-keep: 5
     token-ratio: 0.3
+
+# App configuration
+app:
+  workspace:
+    path: /Users/liushihong/code/mycode/agents/PackClaw/data/workspace
+  skill:
+    repository:
+      path: /Users/liushihong/code/mycode/agents/PackClaw/data/skill-repository

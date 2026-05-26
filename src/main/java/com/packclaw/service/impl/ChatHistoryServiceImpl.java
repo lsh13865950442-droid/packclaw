@@ -85,7 +85,7 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
 
     /**
      * 从 Harness workspace 目录读取会话消息
-     * Harness 将消息存储在 workspace/agents/PackClawAgent/context/<sessionId>/memory_messages.jsonl
+     * Harness 将消息存储在 workspace/agents/PackClawAgent/sessions/<sessionId>.log.jsonl
      */
     private List<Msg> readSessionMessages(String chatId) {
         List<Msg> messages = new ArrayList<>();
@@ -93,9 +93,8 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
 
         Path jsonlPath = workspace.resolve("agents")
                 .resolve("PackClawAgent")
-                .resolve("context")
-                .resolve(chatId)
-                .resolve("memory_messages.jsonl");
+                .resolve("sessions")
+                .resolve(chatId + ".log.jsonl");
 
         log.info("Reading session messages from: {} (exists: {})", jsonlPath.toAbsolutePath(), Files.exists(jsonlPath));
 
@@ -112,6 +111,11 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
                 }
                 try {
                     Msg msg = objectMapper.readValue(line, Msg.class);
+                    // 过滤掉压缩摘要消息
+                    if (msg.getName() != null && "__compaction_summary__".equals(msg.getName())) {
+                        log.debug("Skipping compaction summary message for session {}", chatId);
+                        continue;
+                    }
                     messages.add(msg);
                 } catch (Exception e) {
                     log.debug("Skipping invalid JSON line in session {}: {}", chatId, e.getMessage());
