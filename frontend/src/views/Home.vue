@@ -713,9 +713,16 @@ const selectSession = async (session) => {
   }
 }
 
-// 停止生成（临时禁用，不调后端接口）
-const stopGeneration = () => {
-  // 当前架构中断后无法保存对话内容，暂时关闭停止功能
+// 停止生成
+const stopGeneration = async () => {
+  if (!currentSessionId.value) return
+  try {
+    await api.stopSession(currentSessionId.value)
+    Message.success('已停止生成')
+  } catch (e) {
+    Message.error('停止失败')
+  }
+  chatStore.setStreaming(false)
 }
 
 // 发送消息
@@ -2096,13 +2103,14 @@ onMounted(() => {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #a8e6cf !important;
+  background: linear-gradient(135deg, #f5222d 0%, #fa541c 100%) !important;
   border: none !important;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(245, 34, 45, 0.3);
 }
 
 .stop-button :deep(.arco-btn) {
@@ -2117,7 +2125,9 @@ onMounted(() => {
 }
 
 .stop-button:hover {
-  background: #88d8b0 !important;
+  background: linear-gradient(135deg, #cf1322 0%, #d4380d 100%) !important;
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(245, 34, 45, 0.4);
 }
 
 .stop-button :deep(.arco-btn) {
