@@ -1,76 +1,47 @@
 package com.packclaw.controller;
 
 import com.packclaw.common.domain.Response;
+import com.packclaw.service.QiniuUploadService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
 
 /**
  * 文件上传接口
  *
- * 当前策略：单机版本地存储，返回服务器本地绝对路径
- *   - 图片：后端按路径读取文件，转 Base64 传给模型
- *   - 音频/视频：目前返回本地路径，模型尚无法处理（需公网 URL）
- *
- * TODO: 后续接入公网文件服务（OSS、S3 或其他）后，对音频/视频：
- *       1. 将文件上传至公网存储服务
- *       2. 返回公网可访问 URL 而非本地路径
- *       3. HarnessAgentFactory.buildMsg 中的 URLSource 将直接使用该 URL
+ * 当前策略：使用千牛云对象存储
+ *   - 所有媒体文件（图片/音频/视频）上传至千牛云
+ *   - 返回公网可访问 URL，模型可直接处理
  */
 @Slf4j
 @RestController
 @RequestMapping("/file")
 @Tag(name = "File Upload", description = "Upload media files for multimodal chat")
+@RequiredArgsConstructor
 public class FileUploadController {
 
-    @Value("${packclaw.workspace.path:./data/workspace}")
-    private String workspacePath;
+    private final QiniuUploadService qiniuUploadService;
 
     /**
-     * 上传媒体文件（图像/音频/视频）
-     * 文件保存到 workspace/uploads 目录，返回绝对路径
+     * 上传任意类型文件
+     * 文件上传到千牛云对象存储，返回公网访问URL
      */
     @PostMapping("/upload")
-    @Operation(summary = "Upload media file", description = "Upload image/audio/video, save to local uploads dir, return absolute path")
+    @Operation(summary = "Upload file", description = "Upload any type file to Qiniu cloud storage, return public URL")
     public Response<String> uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
             return Response.fail("File is empty");
         }
 
-        // 校验媒体类型
-        String contentType = file.getContentType();
-        if (contentType == null || (!contentType.startsWith("image/")
-                && !contentType.startsWith("audio/")
-                && !contentType.startsWith("video/"))) {
-            return Response.fail("Unsupported file type: " + contentType);
-        }
+        // 上传到千牛云（支持任意文件类型）
+        String fileUrl = qiniuUploadService.uploadFile(file);
 
-        // 确保上传目录存在
-        Path uploadDir = Path.of(workspacePath).resolve("uploads");
-        Files.createDirectories(uploadDir);
-
-        // 生成唯一文件名，保留原始扩展名
-        String originalName = file.getOriginalFilename();
-        String ext = (originalName != null && originalName.contains("."))
-                ? originalName.substring(originalName.lastIndexOf('.'))
-                : "";
-        String uniqueName = UUID.randomUUID().toString().replace("-", "") + ext;
-        Path target = uploadDir.resolve(uniqueName);
-
-        // 保存文件
-        Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
-        String filePath = target.toAbsolutePath().toString();
-
-        log.info("File uploaded: {} -> {}", originalName, filePath);
-        return Response.ok(filePath);
+        log.info("File uploaded: {} -> {}", file.getOriginalFilename(), fileUrl);
+        return Response.ok(fileUrl);
     }
 }

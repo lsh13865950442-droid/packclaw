@@ -46,7 +46,7 @@ public class HarnessAgentFactory {
     @Value("${packclaw.workspace.path:./data/workspace}")
     private String workspacePath;
 
-    @Value("${app.skill.repository.path:./data/skill-repository}")
+    @Value("${packclaw.skill.repository.path:./data/skill-repository}")
     private String skillRepositoryPath;
 
     /**
@@ -84,9 +84,6 @@ public class HarnessAgentFactory {
      * 媒体处理策略：
      *   - 图片：从服务器本地路径读取，转 Base64 传输（DashScope 图片 Base64 限制 10MB）
      *   - 音频/视频：使用 URLSource，需公网可访问的 URL
-     *     TODO: 目前 filePath 是服务器本地路径，无法直接作为 URL 使用。
-     *           后续需接入公网文件服务，将音频/视频上传至公网并返回可访问 URL，
-     *           再由 FileUploadController 返回该 URL 而非本地路径。
      */
     private Msg buildMsg(ChatRequest request) {
         List<ChatRequest.MediaItem> mediaItems = request.getMediaItems();
@@ -107,46 +104,33 @@ public class HarnessAgentFactory {
             if (item.getMediaType() == null || item.getFilePath() == null) continue;
 
             String prefix = item.getMediaType().split("/")[0].toLowerCase();
-            try {
-                switch (prefix) {
-                    case "image" -> {
-                        // 图片：本地读取转 Base64（DashScope 支持，限制 10MB 内）
-                        byte[] fileBytes = Files.readAllBytes(Path.of(item.getFilePath()));
-                        String base64Data = java.util.Base64.getEncoder().encodeToString(fileBytes);
-                        log.info("Image loaded as Base64: {}, size: {} bytes", item.getFilePath(), fileBytes.length);
-                        blocks.add(ImageBlock.builder()
-                                .source(Base64Source.builder()
-                                        .data(base64Data)
-                                        .mediaType(item.getMediaType())
-                                        .build())
-                                .build());
-                    }
-                    case "audio" -> {
-                        // 音频：使用 URLSource
-                        // TODO: filePath 当前为本地绝对路径，暂无法直接用于 URL。
-                        //       后续接入公网文件服务后，改为返回公网 URL，此处直接使用 item.getFilePath()。
-                        log.info("Audio as URL: {}", item.getFilePath());
-                        blocks.add(AudioBlock.builder()
-                                .source(URLSource.builder()
-                                        .url(item.getFilePath())
-                                        .build())
-                                .build());
-                    }
-                    case "video" -> {
-                        // 视频：使用 URLSource（DashScope 视频不支持 Base64，只支持 URL）
-                        // TODO: filePath 当前为本地绝对路径，暂无法直接用于 URL。
-                        //       后续接入公网文件服务后，改为返回公网 URL，此处直接使用 item.getFilePath()。
-                        log.info("Video as URL: {}", item.getFilePath());
-                        blocks.add(VideoBlock.builder()
-                                .source(URLSource.builder()
-                                        .url(item.getFilePath())
-                                        .build())
-                                .build());
-                    }
-                    default -> log.warn("Unsupported media type prefix: {}", prefix);
+            switch (prefix) {
+                case "image" -> {
+                    blocks.add(ImageBlock.builder()
+                            .source(URLSource.builder()
+                                    .url(item.getFilePath())
+                                    .build())
+                            .build());
                 }
-            } catch (IOException e) {
-                log.error("Failed to read media file: {}", item.getFilePath(), e);
+                case "audio" -> {
+                    // 音频：使用 URLSource
+                    log.info("Audio as URL: {}", item.getFilePath());
+                    blocks.add(AudioBlock.builder()
+                            .source(URLSource.builder()
+                                    .url(item.getFilePath())
+                                    .build())
+                            .build());
+                }
+                case "video" -> {
+                    // 视频：使用 URLSource（DashScope 视频不支持 Base64，只支持 URL）
+                    log.info("Video as URL: {}", item.getFilePath());
+                    blocks.add(VideoBlock.builder()
+                            .source(URLSource.builder()
+                                    .url(item.getFilePath())
+                                    .build())
+                            .build());
+                }
+                default -> log.warn("Unsupported media type prefix: {}", prefix);
             }
         }
 

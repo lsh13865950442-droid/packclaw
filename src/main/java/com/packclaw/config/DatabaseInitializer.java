@@ -42,9 +42,9 @@ public class DatabaseInitializer implements CommandLineRunner {
             executeSqlFile("sql/schema.sql");
             
             // 验证表是否创建成功
-            verifyTableExists("model_config");
             verifyTableExists("session");
             verifyTableExists("session_chat");
+            verifyTableExists("model_config");
             verifyTableExists("skill_config");
             
             log.info("数据库初始化脚本执行成功！");

@@ -746,7 +746,7 @@ const stopGeneration = async () => {
 
 // 发送消息
 const sendMessage = async () => {
-  if (!inputMessage.value.trim() || isStreaming.value) return
+  if (!inputMessage.value.trim() && selectedFiles.value.length === 0 || isStreaming.value) return
   
   // 检查是否配置了模型
   if (enabledModels.value.length === 0) {
@@ -754,26 +754,23 @@ const sendMessage = async () => {
     return
   }
 
-  const userMessage = inputMessage.value.trim()
+  let userMessage = inputMessage.value.trim()
   inputMessage.value = ''
   isChatting.value = true
 
-  // 将已选文件上传到服务器，拿到路径后构建 mediaItems
-  let mediaItems = []
+  // 将已选文件上传到服务器，拿到URL后拼接到消息前面
   const filesToSend = [...selectedFiles.value]
   if (filesToSend.length > 0) {
     try {
-      mediaItems = await Promise.all(
+      const fileUrls = await Promise.all(
         filesToSend.map(async (item) => {
           const res = await api.uploadMediaFile(item.file)
-          return {
-            mediaType: item.file.type,
-            filePath: res.data,          // 后端保存后返回的服务器绝对路径
-            name: item.file.name,
-            previewUrl: item.previewUrl  // 仅前端展示用，不发到后端
-          }
+          return res.data  // 千牛云返回的公网URL
         })
       )
+      // 将文件链接拼接到消息前面
+      const fileLinks = fileUrls.map((url, index) => `[文件${index + 1}](${url})`).join('\n')
+      userMessage = fileLinks + (userMessage ? '\n\n' + userMessage : '')
     } catch (e) {
       Message.error('文件上传失败,请重试')
       return
@@ -782,11 +779,10 @@ const sendMessage = async () => {
     selectedFiles.value = []
   }
 
-  // 添加用户消息（包含 mediaItems用于气泡内展示）
+  // 添加用户消息（文件链接已拼接到userMessage中）
   chatStore.addMessage({
     role: 'user',
-    content: userMessage,
-    mediaItems: mediaItems.length > 0 ? mediaItems : undefined
+    content: userMessage
   })
 
   // 添加加载占位（第一个 REASONING 到来前会被复用）
@@ -818,13 +814,10 @@ const sendMessage = async () => {
         .catch(e => console.error('生成标题失败:', e))
     }
 
-    // 构建请求体（去除 previewUrl，不发到后端）
+    // 构建请求体（文件链接已拼接到query中）
     const requestBody = {
       query: userMessage,
       sessionId: currentSessionId.value
-    }
-    if (mediaItems.length > 0) {
-      requestBody.mediaItems = mediaItems.map(({ mediaType, filePath, name }) => ({ mediaType, filePath, name }))
     }
 
     // 流式请求

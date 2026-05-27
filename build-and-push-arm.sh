@@ -32,7 +32,8 @@ echo "✓ 后端 Docker 镜像构建完成"
 echo ""
 echo "[3/6] 标记并推送后端镜像..."
 docker tag ${BACKEND_IMAGE_NAME}:${IMAGE_TAG} ${BACKEND_FULL_IMAGE}
-docker push ${BACKEND_FULL_IMAGE}
+# 推送时取消代理避免超时
+( unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY; docker push ${BACKEND_FULL_IMAGE} )
 echo "✓ 后端镜像推送完成: ${BACKEND_FULL_IMAGE}"
 
 # 步骤 4: 构建前端 Docker 镜像 (ARM)
@@ -45,7 +46,8 @@ echo "✓ 前端 Docker 镜像构建完成"
 echo ""
 echo "[5/6] 标记并推送前端镜像..."
 docker tag ${FRONTEND_IMAGE_NAME}:${IMAGE_TAG} ${FRONTEND_FULL_IMAGE}
-docker push ${FRONTEND_FULL_IMAGE}
+# 推送时取消代理避免超时
+( unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY; docker push ${FRONTEND_FULL_IMAGE} )
 echo "✓ 前端镜像推送完成: ${FRONTEND_FULL_IMAGE}"
 
 # 步骤 6: 更新 docker-compose.yml 中的镜像标签

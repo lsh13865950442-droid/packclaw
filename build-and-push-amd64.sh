@@ -15,6 +15,13 @@ FRONTEND_FULL_IMAGE="${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${FRONTEND_IMAGE_NAME}
 echo "=========================================="
 echo "PackClaw x86 架构 Docker 构建和推送脚本"
 echo "=========================================="
+echo ""
+echo "⚠️  注意: Docker Desktop 配置了代理 http.docker.internal:3128"
+echo "如果推送超时，请:"
+echo "  1. 打开 Docker Desktop -> Settings -> Resources -> Proxies"
+echo "  2. 在 'Bypass proxy' 中添加: 114.214.255.82:18080"
+echo "  3. 点击 Apply & Restart"
+echo "=========================================="
 
 # 步骤 1: Maven 构建后端
 echo ""

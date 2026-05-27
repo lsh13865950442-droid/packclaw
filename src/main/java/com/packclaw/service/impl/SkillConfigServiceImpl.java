@@ -30,10 +30,10 @@ public class SkillConfigServiceImpl implements SkillConfigService {
     @Resource
     private HarnessAgentFactory harnessAgentFactory;
 
-    @Value("${app.workspace.path:./data/workspace}")
+    @Value("${packclaw.workspace.path:./data/workspace}")
     private String workspacePath;
 
-    @Value("${app.skill.repository.path:./data/skill-repository}")
+    @Value("${packclaw.skill.repository.path:./data/skill-repository}")
     private String skillRepositoryPath;
 
     @Override

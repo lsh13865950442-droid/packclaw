@@ -36,6 +36,7 @@
         <jsonschema-generator.version>4.36.0</jsonschema-generator.version>
         <pagehelper.version>6.1.0</pagehelper.version>
         <okio.version>3.17.0</okio.version>
+        <qiniu.version>7.15.0</qiniu.version>
     </properties>
 
     <!-- 临时禁用私有仓库，使用 Maven 中央仓库 -->
@@ -193,6 +194,13 @@
             <groupId>com.squareup.okio</groupId>
             <artifactId>okio</artifactId>
             <version>${okio.version}</version>
+        </dependency>
+
+        <!-- Qiniu Cloud SDK -->
+        <dependency>
+            <groupId>com.qiniu</groupId>
+            <artifactId>qiniu-java-sdk</artifactId>
+            <version>${qiniu.version}</version>
         </dependency>
     </dependencies>
 

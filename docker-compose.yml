@@ -34,7 +34,7 @@ services:
     expose:
       - "8080"
     volumes:
-      - $HOME/.packclaw/workspace:/root/.packclaw/workspace
+      - $HOME/.packclaw:/root/.packclaw
     networks:
       - packclaw-network
 

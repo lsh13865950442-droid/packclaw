@@ -38,15 +38,12 @@ springdoc:
 packclaw:
   workspace:
     path: /Users/liushihong/code/mycode/agents/PackClaw/data/workspace
-  compaction:
-    msg-threshold: 10
-    last-keep: 5
-    token-ratio: 0.3
-
-# App configuration
-app:
-  workspace:
-    path: /Users/liushihong/code/mycode/agents/PackClaw/data/workspace
   skill:
     repository:
       path: /Users/liushihong/code/mycode/agents/PackClaw/data/skill-repository
+  qiniu:
+    access-key: En_O-Lm_Bhk3IVxGV44B_kDORGqWgkMTKfPLtweb
+    secret-key: YWCeXhK1UsBmPiroQ7LqCN4cBYlzDrHScq7KbR2e
+    bucket: packclaw
+    # 千牛云对象存储的访问域名（需要根据实际情况修改）
+    domain: http://tfn8jmas4.hd-bkt.clouddn.com
