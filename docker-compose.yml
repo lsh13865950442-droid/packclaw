@@ -20,7 +20,7 @@ services:
       - packclaw-network
 
   backend:
-    image: 114.214.255.82:18080/public/packclaw:v0.01.arm
+    image: lush196/packclaw:latest
     container_name: packclaw-backend
     depends_on:
       postgres:
@@ -39,7 +39,7 @@ services:
       - packclaw-network
 
   frontend:
-    image: 114.214.255.82:18080/public/packclaw-frontend:v0.01.arm
+    image: lush196/packclaw-frontend:latest
     container_name: packclaw-frontend
     depends_on:
       - backend

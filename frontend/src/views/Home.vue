@@ -418,7 +418,9 @@
               v-model="inputMessage"
               :auto-size="{ minRows: 1, maxRows: 6 }"
               placeholder="告诉我目标，我来搞定"
-              @keydown.enter.exact.prevent="sendMessage"
+              @compositionstart="isComposing = true"
+              @compositionend="isComposing = false"
+              @keydown.enter.exact.prevent="!isComposing && sendMessage()"
               :resize="false"
               class="message-input"
             />
@@ -504,6 +506,7 @@ const chatStore = useChatStore()
 const { messages, isStreaming, currentChatId, currentSessionId } = storeToRefs(chatStore)
 const { upsertToolCall, toggleToolCall, applyReasoningChunk, applyFinalReasoning, applyToolResult, resetStreamState } = chatStore
 const inputMessage = ref('')
+const isComposing = ref(false) // 跟踪输入法状态
 const sessionList = ref([])
 const currentTitle = ref('')
 const messagesContainer = ref(null)
@@ -786,10 +789,13 @@ const sendMessage = async () => {
   })
 
   // 添加加载占位（第一个 REASONING 到来前会被复用）
+  // 使用临时 ID 标记这条消息，确保错误处理时能正确找到它
+  const tempMessageId = 'temp-' + Date.now()
   chatStore.addMessage({
     role: 'assistant',
     content: '',
-    loading: true
+    loading: true,
+    tempMessageId: tempMessageId
   })
 
   // 重置流式状态（确保上一次的 messageId 不会干扰本次）
@@ -910,9 +916,15 @@ const sendMessage = async () => {
             }
             
             // 找到当前助手消息并添加错误块
+            // 优先通过 messageId 查找，如果没有则通过 tempMessageId 查找最新的助手消息
             let assistantMsg = messages.value.find(m => m.role === 'assistant' && m.messageId === messageId)
-            
-            // 如果没找到，使用最后一条助手消息
+
+            // 如果没找到，查找有 tempMessageId 的最新助手消息（正在等待响应的消息）
+            if (!assistantMsg) {
+              assistantMsg = messages.value.filter(m => m.role === 'assistant' && m.tempMessageId).pop()
+            }
+
+            // 如果还没找到，使用最后一条助手消息
             if (!assistantMsg) {
               assistantMsg = messages.value.filter(m => m.role === 'assistant').pop()
             }
@@ -924,6 +936,8 @@ const sendMessage = async () => {
               assistantMsg.contentBlocks.push(errorBlock)
               assistantMsg.error = true
               assistantMsg.loading = false  // 停止加载动画
+              // 清除 tempMessageId，防止后续错误被错误地添加到这条消息
+              delete assistantMsg.tempMessageId
             } else {
               // 如果完全没有助手消息，创建一个
               messages.value.push({
