@@ -19,7 +19,7 @@ echo "将构建 linux/amd64 和 linux/arm64 架构的镜像"
 echo ""
 
 # 步骤 0: 检查 Docker Hub 登录状态
-echo "[0/6] 检查 Docker Hub 登录状态..."
+echo "[0/5] 检查 Docker Hub 登录状态..."
 if [ ! -f ~/.docker/config.json ] || ! grep -q "index.docker.io" ~/.docker/config.json 2>/dev/null; then
     echo "⚠️  未登录 Docker Hub，请先登录:"
     echo "   docker login"
@@ -30,7 +30,7 @@ echo "✓ Docker Hub 已登录"
 
 # 步骤 1: 创建/使用 buildx builder
 echo ""
-echo "[1/6] 配置 buildx 多架构构建器..."
+echo "[1/5] 配置 buildx 多架构构建器..."
 if ! docker buildx ls | grep -q "multiarch"; then
     docker buildx create --name multiarch --driver docker-container --use
 else
@@ -39,15 +39,9 @@ fi
 docker buildx inspect --bootstrap
 echo "✓ 构建器配置完成"
 
-# 步骤 2: Maven 构建后端
+# 步骤 2: 构建并推送后端 Docker 镜像 (多架构，Maven 构建在容器内完成)
 echo ""
-echo "[2/6] 开始 Maven 构建后端..."
-mvn clean package -DskipTests
-echo "✓ Maven 构建完成"
-
-# 步骤 3: 构建并推送后端 Docker 镜像 (多架构)
-echo ""
-echo "[3/6] 构建并推送后端 Docker 镜像 (amd64 + arm64)..."
+echo "[2/5] 构建并推送后端 Docker 镜像 (amd64 + arm64)..."
 docker buildx build \
     --platform linux/amd64,linux/arm64 \
     -t ${BACKEND_FULL_IMAGE} \
@@ -55,9 +49,9 @@ docker buildx build \
     .
 echo "✓ 后端镜像推送完成: ${BACKEND_FULL_IMAGE}"
 
-# 步骤 4: 构建并推送前端 Docker 镜像 (多架构)
+# 步骤 3: 构建并推送前端 Docker 镜像 (多架构)
 echo ""
-echo "[4/6] 构建并推送前端 Docker 镜像 (amd64 + arm64)..."
+echo "[3/5] 构建并推送前端 Docker 镜像 (amd64 + arm64)..."
 docker buildx build \
     --platform linux/amd64,linux/arm64 \
     -t ${FRONTEND_FULL_IMAGE} \
@@ -65,9 +59,9 @@ docker buildx build \
     ./frontend
 echo "✓ 前端镜像推送完成: ${FRONTEND_FULL_IMAGE}"
 
-# 步骤 5: 更新 docker-compose.yml
+# 步骤 4: 更新 docker-compose.yml
 echo ""
-echo "[5/6] 更新 docker-compose.yml..."
+echo "[4/5] 更新 docker-compose.yml..."
 sed -i.bak "s|image: .*/packclaw:.*|image: ${BACKEND_FULL_IMAGE}|" docker-compose.yml
 sed -i.bak "s|image: .*/packclaw-frontend:.*|image: ${FRONTEND_FULL_IMAGE}|" docker-compose.yml
 rm -f docker-compose.yml.bak
