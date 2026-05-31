@@ -1148,10 +1148,48 @@ const formatToolInput = (input) => {
 }
 
 // 渲染 Markdown
+const renderer = new marked.Renderer()
+renderer.code = function(code, language) {
+  const lang = language || ''
+  const langLabel = lang ? `<span class="code-lang">${lang}</span>` : ''
+  return `<div class="code-block-wrapper">
+    <div class="code-block-header">
+      ${langLabel}
+      <button class="copy-code-btn" onclick="copyCode(this)">复制</button>
+    </div>
+    <pre><code class="language-${lang}">${code}</code></pre>
+  </div>`
+}
+
+marked.setOptions({
+  renderer: renderer,
+  breaks: true
+})
+
 const renderMarkdown = (content) => {
   if (!content) return ''
   return marked(content)
 }
+
+// 复制代码到剪贴板
+const copyCode = async (button) => {
+  const codeBlock = button.closest('.code-block-wrapper')
+  const code = codeBlock.querySelector('code').textContent
+  try {
+    await navigator.clipboard.writeText(code)
+    button.textContent = '已复制'
+    button.classList.add('copied')
+    setTimeout(() => {
+      button.textContent = '复制'
+      button.classList.remove('copied')
+    }, 2000)
+  } catch (e) {
+    console.error('复制失败:', e)
+  }
+}
+
+// 将 copyCode 暴露到全局作用域，供 onclick 使用
+window.copyCode = copyCode
 
 // 滚动到底部（仅在用户已处于底部附近时才滚动，允许向上查看历史）
 const scrollToBottom = async () => {
@@ -1822,6 +1860,61 @@ onMounted(() => {
   padding: 0;
   color: #e6e6e6;
   font-size: 13px;
+}
+
+/* 代码块包装器 */
+.assistant-bubble :deep(.code-block-wrapper) {
+  position: relative;
+  margin: 16px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #1e1e1e;
+}
+
+.assistant-bubble :deep(.code-block-wrapper pre) {
+  margin: 0;
+  border-radius: 0;
+  padding-top: 0;
+}
+
+/* 代码块头部 */
+.assistant-bubble :deep(.code-block-header) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background: #2d2d2d;
+  border-bottom: 1px solid #3d3d3d;
+}
+
+.assistant-bubble :deep(.code-lang) {
+  font-size: 12px;
+  color: #888;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+/* 复制按钮 */
+.assistant-bubble :deep(.copy-code-btn) {
+  background: transparent;
+  border: 1px solid #555;
+  color: #ccc;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.assistant-bubble :deep(.copy-code-btn:hover) {
+  background: #3d3d3d;
+  border-color: #777;
+  color: #fff;
+}
+
+.assistant-bubble :deep(.copy-code-btn.copied) {
+  background: #2ea043;
+  border-color: #2ea043;
+  color: #fff;
 }
 
 /* 工具调用内容框强制覆盖 pre 的深色样式 */
